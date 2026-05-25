@@ -1,0 +1,11 @@
+{
+  "name": "ai-governance-endpoint",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Risk-verdict + Vanta-capture endpoint for the AI governance copilot (Glean custom actions).",
+  "scripts": {
+    "start": "node index.mjs",
+    "test": "node --test"
+  }
+}

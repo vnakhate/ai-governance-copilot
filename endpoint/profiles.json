@@ -1,0 +1,47 @@
+{
+  "acme-notetaker": {
+    "id": "acme-notetaker",
+    "name": "Acme AI Notetaker",
+    "vendor": "Acme Inc.",
+    "capabilities": ["records call audio", "transcribes", "summarizes"],
+    "data_residency": "US",
+    "certs": [],
+    "dpa_on_file": false,
+    "retention_days": null,
+    "approval_status": "unreviewed",
+    "data_types_touched": ["call_audio", "customer_pii"],
+    "control_templates": [
+      { "gap": "no_dpa", "control": "Signed DPA required" },
+      { "gap": "non_eu_residency", "control": "EU data residency" },
+      { "gap": "open_retention", "control": "Retention < 30 days" }
+    ]
+  },
+  "noteflow-eu": {
+    "id": "noteflow-eu",
+    "name": "NoteFlow EU",
+    "vendor": "NoteFlow GmbH",
+    "capabilities": ["transcribes", "summarizes"],
+    "data_residency": "EU",
+    "certs": [],
+    "dpa_on_file": true,
+    "retention_days": 30,
+    "approval_status": "unreviewed",
+    "data_types_touched": ["customer_pii"],
+    "control_templates": [
+      { "gap": "no_cert", "control": "SOC 2 or ISO 27001 attestation" }
+    ]
+  },
+  "claude-bedrock-internal": {
+    "id": "claude-bedrock-internal",
+    "name": "Claude on Bedrock (internal)",
+    "vendor": "Internal Platform Team",
+    "capabilities": ["chat", "summarization", "drafting"],
+    "data_residency": "EU",
+    "certs": ["SOC2", "ISO27001"],
+    "dpa_on_file": true,
+    "retention_days": 0,
+    "approval_status": "approved",
+    "data_types_touched": ["customer_pii", "internal"],
+    "control_templates": []
+  }
+}

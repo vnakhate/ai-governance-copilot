@@ -1,0 +1,71 @@
+# OpenAPI spec for Glean custom actions.
+# Upload this in Glean Agent Builder -> Actions -> Custom action.
+# Replace <NGROK_URL> with your reserved ngrok domain (or deployed URL).
+# Both are EXECUTION actions (Glean calls the API and uses the result in-chat).
+openapi: 3.0.0
+info:
+  title: AI Governance Copilot Endpoint
+  version: "0.1.0"
+servers:
+  - url: https://<NGROK_URL>
+paths:
+  /assess:
+    post:
+      operationId: assessAITool
+      summary: Assess the governance risk of using an AI tool for a given data type.
+      description: >
+        Read-only. Returns a risk verdict (HIGH/MEDIUM/LOW) and the required controls
+        for using a named AI tool with a given data type in a given jurisdiction.
+        Call this whenever a user asks whether they can use an AI tool for some data.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tool_id, data_type]
+              properties:
+                tool_id: { type: string, description: "e.g. acme-notetaker, noteflow-eu, claude-bedrock-internal" }
+                data_type: { type: string, description: "e.g. call_audio, customer_pii, internal, marketing_copy" }
+                jurisdiction: { type: string, description: "e.g. EU, US" }
+      responses:
+        "200":
+          description: Risk verdict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  risk_level: { type: string }
+                  why: { type: string }
+                  required_controls: { type: array, items: { type: string } }
+                  needs_review: { type: boolean }
+                  data_class: { type: string }
+  /capture:
+    post:
+      operationId: captureToVanta
+      summary: Capture the onboarding risk decision into Vanta (gated write).
+      description: >
+        WRITE. Creates a Vanta AI-vendor risk record for the tool with its risk level
+        and required controls. Only call this AFTER the user explicitly confirms "Yes".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tool_id, data_type]
+              properties:
+                tool_id: { type: string }
+                data_type: { type: string }
+                jurisdiction: { type: string }
+      responses:
+        "200":
+          description: Vanta record created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  captured: { type: boolean }
+                  vanta_record: { type: object }
