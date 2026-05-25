@@ -235,6 +235,14 @@ return values feed the agent's response).
   voice's objection — near-zero cost, future-proofs the live-Vanta path.)
 - **3B — Hosting via ngrok→localhost** (user's call, for fast iteration). Mitigations:
   reserved ngrok domain (stable URL), a recorded backup clip, demo off a phone hotspot.
+- **Dual-mode (added 2026-05-25): chat client + headless client.** The employee chat
+  copilot and a headless caller (Glean agent-run API, or a direct service/automation call)
+  are two CLIENTS of the same `/assess` + `/capture` core. The endpoint returns structured
+  JSON (that IS the API contract); the chat agent renders that JSON for humans. The demo
+  uses chat (the live wow); the headless path is the product story — procurement/ITSM/a
+  scheduled job can call the same engine. New build task: a thin headless entrypoint + a
+  one-page API contract doc. The verdict therefore has TWO presentations that must stay in
+  sync: raw JSON (API) and chat-rendered (human) — both derived from the same `assess()`.
 
 ```
 ENDPOINT CONTRACT
@@ -261,6 +269,51 @@ AGENT FLOW (Glean runtime)
 
 Two critical gaps (ngrok drop, retrieval quality) are the live-demo risks — both are
 addressed by the reordered smoke test + recorded backup, not by code.
+
+## Chat UX Spec (locked in /plan-design-review 2026-05-25)
+
+Applies to the chat client. The headless client consumes the raw `assess()` JSON; this
+spec is the human rendering of that same JSON (the two must stay in sync).
+
+### Verdict rendering (Issue 1A — accessible, survives Glean markdown, scans in 3s)
+Risk is signaled by **emoji + WORD + color**, never color alone (a11y; also Glean
+markdown can't inject CSS). Hierarchy: badge → why → controls checklist → citation → action.
+```
+🔴 **HIGH RISK** — Acme AI Notetaker
+Customer call audio (Regulated-PII) → US servers, no DPA on file (GDPR gap).
+**Required before use:**
+- [ ] Signed DPA
+- [ ] EU data residency
+- [ ] Retention < 30 days
+> Per AI Acceptable Use Policy §3.2 — [view policy](link)
+Onboard into Vanta with this risk captured?  [Yes]  [No]
+```
+Badges: 🔴 HIGH · 🟡 MEDIUM · 🟢 LOW (approved) · ⚪ MEDIUM — needs review (off-set/unknown).
+
+### Interaction states (Issue 2A — all six, with user-facing copy)
+| State | What the user sees |
+|---|---|
+| Loading | "Checking your AI policy and assessing risk…" (while `/assess` runs) |
+| Verdict | the 1A block above |
+| Confirmation → captured | "✅ Logged in Vanta as **VND-2026-0142** — flagged HIGH, owner notified. [View in Vanta](link)" |
+| "No" outcome | "Got it — nothing logged. The assessment above stands if you need it later." |
+| Endpoint unreachable (ngrok drop) | "⚠️ I couldn't reach the risk service just now. Try again in a moment — nothing was logged." (graceful, not a hang — this is the ngrok-drop mitigation) |
+| Ambiguous input | "Which tool do you mean? I can assess a specific one — e.g. 'Acme Notetaker' or 'ChatGPT'." |
+| Off-set / unknown tool | "⚪ **MEDIUM — needs review.** I don't have a risk profile for that tool yet, so I can't give a confident verdict. Want me to flag it for the governance team?" |
+
+### Yes/No mechanism (OPEN — verify in smoke test)
+Prefer Glean interactive action buttons ([Yes]/[No]) if the platform supports them in
+agent responses; if not, fall back to "reply **Yes** to onboard." Confirm which during the
+smoke test (step 1, action invocation). If buttons: ensure 44px tap targets on mobile.
+
+### Journey arc (Pass 3, addressed)
+question (anxiety: "am I about to break a rule?") → instant clear verdict (relief) →
+one-tap action (empowerment) → "Logged in Vanta" (trust). The 1A hierarchy + the
+confirmation state carry this arc; no extra work needed.
+
+### Design system (Pass 5)
+No DESIGN.md — this is a one-off agent rendering inside Glean's chat conventions; reuse
+those, don't fight them. If a custom-UI product emerges later, run /design-consultation.
 
 ## Open Questions
 
@@ -360,10 +413,12 @@ recorded clip (the true plan A for the live network hop) or a standalone Glean-s
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 0 | — | not run |
 | Codex Review | `/codex review` | Independent 2nd opinion | 1 | issues_found | 9 findings, 3 tensions resolved |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 1 | CLEAR | 7 issues, 0 critical gaps |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | not run |
+| Design Review | `/plan-design-review` | UI/UX gaps | 1 | CLEAR | 3/10 → 9/10, 3 decisions (scoped to chat surface) |
 | DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | not run |
 
 - **CODEX:** codex binary broken (ENOENT, partial install — `brew reinstall codex`). Outside voice ran via independent Claude subagent instead.
 - **CROSS-MODEL:** Both agreed verdict-in-endpoint (1A) is correct. Disagreed on 5A shared-function (user kept it) and on retrieval being the real risk (user expanded the smoke test to test retrieval first). Rubric LOW-for-PII bug fixed.
+- **DESIGN:** chat surface specced (verdict rendering 1A + 6 states). Dual-mode added: chat client + headless API client share the `/assess`+`/capture` core. Open: verify Glean Yes/No button support in smoke test.
+- **REPO:** project split into a standalone private repo `vnakhate/ai-governance-copilot` (isolated from the preprod monorepo). Commit hashes across reviews differ only due to this split — not staleness.
 - **UNRESOLVED:** 0
-- **VERDICT:** ENG CLEARED — ready to implement. Eng review is the only required gate; passed.
+- **VERDICT:** ENG + DESIGN CLEARED — ready to implement. Eng review (the only required gate) passed.
