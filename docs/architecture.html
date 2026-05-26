@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance Copilot — Architecture &amp; Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Nord palette — dark-first */
+:root{
+  --bg:#2e3440; --surface:#343b48; --surface-2:#3b4252; --recess:#2b313c; --line:rgba(216,222,233,.12);
+  --line-2:rgba(216,222,233,.22);
+  --text:#eceff4; --text-dim:#aeb6c4; --text-faint:#7b869c;
+  --frost:#88c0d0; --frost-2:#81a1c1; --frost-3:#8fbcbb; --frost-soft:rgba(136,192,208,.13);
+  --high:#bf616a; --high-soft:rgba(191,97,106,.16);
+  --med:#ebcb8b;  --med-soft:rgba(235,203,139,.16);
+  --low:#a3be8c;  --low-soft:rgba(163,190,140,.16);
+  --orange:#d08770;
+  --sans:"DM Sans",system-ui,sans-serif; --mono:"Fira Code",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#eceff4; --surface:#ffffff; --surface-2:#e5e9f0; --recess:#dde3ec; --line:rgba(46,52,64,.12);
+    --line-2:rgba(46,52,64,.22);
+    --text:#2e3440; --text-dim:#434c5e; --text-faint:#6a7689;
+    --frost:#3b6ea5; --frost-2:#5e81ac; --frost-3:#4a8c87; --frost-soft:rgba(59,110,165,.1);
+    --high:#a4444c; --high-soft:rgba(164,68,76,.1);
+    --med:#9a7727;  --med-soft:rgba(154,119,39,.12);
+    --low:#5a7d4f;  --low-soft:rgba(90,125,79,.12);
+    --orange:#b5613f;
+  }
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 85% -5%, var(--frost-soft), transparent 40%);
+  background-attachment:fixed;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:52px 22px 90px}
+@media(prefers-reduced-motion:no-preference){
+  .rise{opacity:0;transform:translateY(13px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+/* header */
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--frost);display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line-2);padding:5px 11px;border-radius:5px;background:var(--frost-soft)}
+h1{font-size:clamp(30px,5.2vw,46px);line-height:1.06;margin:20px 0 8px;letter-spacing:-.02em;font-weight:700}
+.dek{font-size:18px;color:var(--text-dim);max-width:64ch;margin:0}
+.dual{font-family:var(--mono);font-size:13px;color:var(--text-faint);margin-top:16px;background:var(--recess);border:1px solid var(--line);border-radius:7px;padding:10px 14px;display:inline-block}
+.dual b{color:var(--frost)}
+/* section */
+section{margin-top:50px}
+.lab{font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-dim);display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.lab .n{color:var(--frost);font-weight:600}
+.lab::after{content:"";flex:1;height:1px;background:var(--line)}
+h2{font-size:23px;margin:0 0 4px;letter-spacing:-.01em;font-weight:600}
+.intro{color:var(--text-dim);margin:0 0 18px;max-width:72ch}
+/* mermaid */
+.mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--line);border-radius:9px;padding:10px;overflow:hidden}
+.mermaid-canvas{display:flex;justify-content:center;cursor:grab;transition:transform .08s linear;transform-origin:center top}
+.mermaid-canvas.drag{cursor:grabbing}
+.zoom{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:5}
+.zoom button{font-family:var(--mono);width:30px;height:30px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);border-radius:5px;cursor:pointer;font-size:15px;line-height:1}
+.zoom button:hover{border-color:var(--frost);color:var(--frost)}
+.hint{font-family:var(--mono);font-size:11px;color:var(--text-faint);text-align:center;margin-top:8px}
+/* cards */
+.grid{display:grid;gap:13px;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:16px 17px}
+.card.hero{background:var(--surface-2);border-color:var(--line-2)}
+.card h3{margin:0 0 4px;font-family:var(--mono);font-size:13.5px;font-weight:600;color:var(--frost);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.card h3 .badge{font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--low);background:var(--low-soft);border:1px solid var(--low);padding:1px 6px;border-radius:10px}
+.card p{margin:0;font-size:14px;color:var(--text-dim)}
+.card .fns{margin:9px 0 0;padding:0;list-style:none;font-family:var(--mono);font-size:11.5px;color:var(--text-faint);border-top:1px solid var(--line);padding-top:8px}
+.card .fns li{margin:2px 0}
+.card .fns b{color:var(--text-dim);font-weight:600}
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:9px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);padding:10px 14px;border-bottom:1px solid var(--line-2)}
+td{padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:nth-child(even){background:var(--surface)}
+tbody tr:last-child td{border-bottom:none}
+td code,p code,li code{font-family:var(--mono);font-size:12.5px;background:var(--recess);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--text)}
+.badge-v{font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 9px;border-radius:4px;border:1px solid;white-space:nowrap}
+.b-high{color:var(--high);background:var(--high-soft);border-color:var(--high)}
+.b-med{color:var(--med);background:var(--med-soft);border-color:var(--med)}
+.b-low{color:var(--low);background:var(--low-soft);border-color:var(--low)}
+/* code block */
+.code{background:var(--recess);border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.code .hd{font-family:var(--mono);font-size:11.5px;color:var(--text-faint);padding:8px 14px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.code pre{margin:0;padding:14px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.55;color:var(--text);white-space:pre}
+.code .k{color:var(--frost-2)} .code .s{color:var(--low)} .code .c{color:var(--text-faint)}
+.two{display:grid;gap:13px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+/* file tree */
+.tree{background:var(--recess);border:1px solid var(--line);border-radius:9px;padding:16px 18px;font-family:var(--mono);font-size:13px;line-height:1.85;color:var(--text-dim);overflow-x:auto}
+.tree b{color:var(--frost)} .tree .ml{color:var(--text-faint)} .tree .new{color:var(--low)}
+footer{margin-top:54px;padding-top:20px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--text-faint)}
+footer a{color:var(--frost)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="rise">
+    <span class="kicker">Architecture &amp; design</span>
+    <h1>AI Governance Copilot</h1>
+    <p class="dek">A deterministic risk-verdict engine with a Glean chat client. An employee asks; the engine answers from policy + tool data; the decision is captured in Vanta and logged to an audit trail.</p>
+    <div class="dual">core principle &rarr; the verdict lives in a hosted <b>endpoint</b>, not the prompt. chat is client #1; a headless caller is client #2. <b>one engine, many surfaces.</b></div>
+  </header>
+
+  <section>
+    <div class="lab"><span class="n">01</span> System architecture</div>
+    <h2>Components and data flow</h2>
+    <p class="intro">Two clients call one engine. The engine computes the verdict in code (deterministic), reads tool profiles, writes the decision to Vanta and to an append-only audit log. Glean's enterprise retrieval grounds the agent's policy citation — the one thing only Glean does.</p>
+    <div class="mermaid-wrap" id="w1">
+      <div class="zoom"><button data-z="out">&minus;</button><button data-z="reset">&#8635;</button><button data-z="in">+</button></div>
+      <div class="mermaid-canvas">
+<pre class="mermaid">
+flowchart TD
+  A1["Glean agent<br/><small>chat copilot · client #1</small>"]
+  A2["Headless caller<br/><small>procurement / CI / script · client #2</small>"]
+  POL[("Indexed policy<br/>Glean retrieval")]
+  AS["POST /assess<br/><small>read-only</small>"]
+  CAP["POST /capture<br/><small>gated write</small>"]
+  FN["assess()<br/><small>rubric in code · single source of truth</small>"]
+  PROF[("profiles.json<br/><small>tool risk data</small>")]
+  AUD[("audit-log.jsonl<br/><small>every decision</small>")]
+  VANTA[("Vanta<br/>AI-vendor record")]
+  A1 --> AS
+  A2 --> AS
+  A1 -. cites .-> POL
+  AS --> FN
+  CAP --> FN
+  FN --> PROF
+  A1 -->|user says Yes| CAP
+  A2 -->|commit flag| CAP
+  AS --> AUD
+  CAP --> AUD
+  CAP --> VANTA
+  classDef ep fill:#3b4252,stroke:#88c0d0,color:#eceff4;
+  classDef store fill:#2b313c,stroke:#81a1c1,color:#d8dee9;
+  class AS,CAP,FN ep;
+  class PROF,AUD,POL,VANTA store;
+</pre>
+      </div>
+    </div>
+    <div class="hint">Ctrl/&#8984; + scroll to zoom · drag to pan · solid = data flow, dotted = policy citation</div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">02</span> Components</div>
+    <h2>What each piece does</h2>
+    <div class="grid">
+      <div class="card hero rise">
+        <h3>endpoint/index.mjs <span class="badge">8 tests</span></h3>
+        <p>Zero-dependency Node server. The whole engine: rubric, routes, audit, Vanta mapping.</p>
+        <ul class="fns">
+          <li><b>assess()</b> — verdict from profile × data × jurisdiction</li>
+          <li><b>/assess</b> — read-only verdict · <b>/capture</b> — gated write</li>
+          <li><b>recordAudit() / readAudit()</b> — append-only trail · <b>/audit</b></li>
+          <li><b>toVantaRecord()</b> — profile+verdict &rarr; Vanta shape</li>
+        </ul>
+      </div>
+      <div class="card rise">
+        <h3>profiles.json</h3>
+        <p>Hand-authored tool risk data — capabilities, residency, certs, DPA, retention, approval, control templates.</p>
+        <ul class="fns"><li><b>3</b> demo tools (HIGH / MEDIUM / approved-LOW)</li></ul>
+      </div>
+      <div class="card rise">
+        <h3>policy/*.md</h3>
+        <p>Indexed into Glean for grounded citation. AUP §3.2 = the regulated-PII clause the verdict cites.</p>
+        <ul class="fns"><li><b>aup.md</b> · <b>data-classification.md</b></li></ul>
+      </div>
+      <div class="card rise">
+        <h3>agent/instructions.md</h3>
+        <p>The Glean Agent Builder prompt: extract inputs &rarr; call /assess &rarr; render verdict + cite &rarr; gated /capture.</p>
+        <ul class="fns"><li><b>eval-cases.md</b> — 16 behavior cases</li></ul>
+      </div>
+      <div class="card rise">
+        <h3>scripts/demo-headless.mjs</h3>
+        <p>Calls the same engine headlessly — proves client #2 gets an identical verdict + Vanta record.</p>
+      </div>
+      <div class="card rise">
+        <h3>endpoint/glean-action.yaml</h3>
+        <p>OpenAPI spec to register /assess + /capture as Glean custom actions.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">03</span> The verdict engine</div>
+    <h2>Deterministic rubric — <code>assess()</code></h2>
+    <p class="intro">Computed in code, identical every run, unit-tested per row. The data class comes from the <em>data type</em> the employee wants to use; the gaps come from the tool profile; the jurisdiction decides residency.</p>
+    <div class="tbl-wrap" style="margin-bottom:14px">
+      <table>
+        <thead><tr><th>Condition (data class × tool × jurisdiction)</th><th style="width:150px">Verdict</th><th>Demo tool</th></tr></thead>
+        <tbody>
+          <tr><td>Regulated-PII <b>and</b> (no DPA <b>or</b> non-EU residency)</td><td><span class="badge-v b-high">HIGH</span></td><td><code>acme-notetaker</code></td></tr>
+          <tr><td>Regulated-PII <b>and</b> DPA <b>and</b> EU <b>and</b> no cert</td><td><span class="badge-v b-med">MEDIUM</span></td><td><code>noteflow-eu</code></td></tr>
+          <tr><td>Regulated-PII <b>and</b> DPA <b>and</b> EU <b>and</b> cert <b>and</b> approved</td><td><span class="badge-v b-low">LOW</span></td><td><code>claude-bedrock-internal</code></td></tr>
+          <tr><td>Confidential / Internal <b>and</b> approved</td><td><span class="badge-v b-low">LOW</span></td><td>—</td></tr>
+          <tr><td>Unknown tool / anything else / uncertain</td><td><span class="badge-v b-med">MEDIUM</span> <small>needs review</small></td><td>off-set tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th style="width:200px">data_type input</th><th>Classification</th></tr></thead>
+        <tbody>
+          <tr><td><code>call_audio</code>, <code>customer_pii</code>, <code>health</code>, <code>financial</code></td><td>Regulated-PII</td></tr>
+          <tr><td><code>confidential</code>, <code>source_code</code>, <code>contracts</code></td><td>Confidential</td></tr>
+          <tr><td><code>internal</code>, <code>internal_docs</code></td><td>Internal</td></tr>
+          <tr><td>anything else (e.g. <code>marketing_copy</code>)</td><td>Public</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">04</span> Request flow</div>
+    <h2>Ask &rarr; verdict &rarr; gated capture</h2>
+    <p class="intro">The signature flow: <code>/assess</code> is read-only and always safe; <code>/capture</code> writes to Vanta and fires only after an explicit "Yes". Both call the same <code>assess()</code> (so the record matches the verdict) and both append to the audit trail.</p>
+    <div class="mermaid-wrap" id="w2">
+      <div class="zoom"><button data-z="out">&minus;</button><button data-z="reset">&#8635;</button><button data-z="in">+</button></div>
+      <div class="mermaid-canvas">
+<pre class="mermaid">
+sequenceDiagram
+  actor E as Employee
+  participant G as Glean agent
+  participant EP as Endpoint
+  participant V as Vanta
+  E->>G: Can we use Acme on customer calls?
+  G->>EP: POST /assess {tool, data, jurisdiction}
+  Note over EP: assess() + audit(proceeded null)
+  EP-->>G: HIGH + required controls
+  G-->>E: verdict card + cite AUP 3.2 + [Yes/No]
+  E->>G: Yes
+  G->>EP: POST /capture
+  Note over EP: assess() again (5A) + audit(proceeded true)
+  EP->>V: create AI-vendor record
+  EP-->>G: record_id, flagged
+  G-->>E: Logged in Vanta, owner notified
+</pre>
+      </div>
+    </div>
+    <div class="hint">If the employee says No, /capture is never called — the audit row shows proceeded = null</div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">05</span> Schemas</div>
+    <h2>The shapes that flow through</h2>
+    <div class="two">
+      <div class="code rise">
+        <div class="hd">tool profile (input to assess)</div>
+<pre><span class="c">// profiles.json[tool_id]</span>
+{
+  <span class="k">"id"</span>: <span class="s">"acme-notetaker"</span>,
+  <span class="k">"data_residency"</span>: <span class="s">"US"</span>,
+  <span class="k">"certs"</span>: [],
+  <span class="k">"dpa_on_file"</span>: false,
+  <span class="k">"retention_days"</span>: null,
+  <span class="k">"approval_status"</span>: <span class="s">"unreviewed"</span>,
+  <span class="k">"control_templates"</span>: [
+    {<span class="k">"gap"</span>:<span class="s">"no_dpa"</span>,
+     <span class="k">"control"</span>:<span class="s">"Signed DPA"</span>}
+  ]
+}</pre>
+      </div>
+      <div class="code rise">
+        <div class="hd">verdict (out of /assess)</div>
+<pre>{
+  <span class="k">"risk_level"</span>: <span class="s">"HIGH"</span>,
+  <span class="k">"data_class"</span>: <span class="s">"Regulated-PII"</span>,
+  <span class="k">"why"</span>: <span class="s">"no DPA; US residency</span>
+<span class="s">          vs EU (GDPR gap)"</span>,
+  <span class="k">"required_controls"</span>: [
+    <span class="s">"Signed DPA"</span>,
+    <span class="s">"EU data residency"</span>,
+    <span class="s">"Retention &lt; 30 days"</span>
+  ],
+  <span class="k">"needs_review"</span>: false
+}</pre>
+      </div>
+      <div class="code rise">
+        <div class="hd">Vanta record (out of /capture)</div>
+<pre>{
+  <span class="k">"record_id"</span>: <span class="s">"VND-2026-0141"</span>,
+  <span class="k">"object"</span>: <span class="s">"ai_vendor_risk"</span>,
+  <span class="k">"tool"</span>: <span class="s">"Acme AI Notetaker"</span>,
+  <span class="k">"risk_level"</span>: <span class="s">"HIGH"</span>,
+  <span class="k">"required_controls"</span>: [<span class="c">...</span>],
+  <span class="k">"owner"</span>: <span class="s">"governance@co.com"</span>,
+  <span class="k">"status"</span>: <span class="s">"flagged"</span>,
+  <span class="k">"captured_at"</span>: <span class="s">"&lt;iso&gt;"</span>
+}</pre>
+      </div>
+      <div class="code rise">
+        <div class="hd">audit entry (every /assess)</div>
+<pre><span class="c">// append-only JSONL · the moat</span>
+{
+  <span class="k">"ts"</span>: <span class="s">"&lt;iso&gt;"</span>,
+  <span class="k">"who"</span>: <span class="s">"alice"</span>,
+  <span class="k">"tool"</span>: <span class="s">"acme-notetaker"</span>,
+  <span class="k">"data"</span>: <span class="s">"call_audio"</span>,
+  <span class="k">"verdict"</span>: <span class="s">"HIGH"</span>,
+  <span class="k">"proceeded"</span>: null <span class="c">// true on capture</span>
+}</pre>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">06</span> Repository</div>
+    <h2>File map</h2>
+    <div class="tree rise">
+<b>ai-governance-copilot/</b>
+├─ <b>endpoint/</b>
+│  ├─ index.mjs        <span class="ml">assess() + /assess + /capture + audit</span>
+│  ├─ profiles.json    <span class="ml">3 tool risk profiles</span>
+│  ├─ assess.test.mjs  <span class="ml">8 unit tests (rubric + audit)</span>
+│  ├─ glean-action.yaml <span class="ml">OpenAPI for Glean actions</span>
+│  └─ package.json     <span class="ml">npm start · npm test</span>
+├─ <b>agent/</b>
+│  ├─ instructions.md  <span class="ml">paste-ready Agent Builder prompt</span>
+│  └─ eval-cases.md    <span class="ml">16 behavior cases</span>
+├─ <b>policy/</b>
+│  ├─ ai-acceptable-use-policy.md  <span class="ml">§3.2 = cited clause</span>
+│  └─ data-classification.md       <span class="ml">4 levels</span>
+├─ <span class="new">scripts/demo-headless.mjs</span>  <span class="ml">dual-surface proof</span>
+├─ <b>docs/</b>  <span class="ml">design.md · test-plan.md · roadmap.md</span>
+├─ SMOKE.md     <span class="ml">Glean-side runbook</span>
+├─ TODOS.md     <span class="ml">roadmap: discovery, multi-tenant, Slack…</span>
+└─ README.md
+</div>
+  </section>
+
+  <footer>
+    Generated by /visual-explainer · self-contained · <a href="https://github.com/vnakhate/ai-governance-copilot">vnakhate/ai-governance-copilot</a> @ main · Nord palette · DM Sans + Fira Code
+  </footer>
+</div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+mermaid.initialize({
+  startOnLoad:true, securityLevel:"loose", theme:"base",
+  themeVariables:{
+    fontFamily:'"Fira Code", monospace', fontSize:"17px",
+    primaryColor: dark?"#3b4252":"#ffffff",
+    primaryTextColor: dark?"#eceff4":"#2e3440",
+    primaryBorderColor:"#88c0d0",
+    lineColor: dark?"#7b869c":"#5e81ac",
+    secondaryColor: dark?"#2b313c":"#e5e9f0",
+    tertiaryColor: dark?"#2b313c":"#eceff4",
+    actorBkg: dark?"#3b4252":"#ffffff", actorBorder:"#88c0d0", actorTextColor: dark?"#eceff4":"#2e3440",
+    signalColor: dark?"#aeb6c4":"#434c5e", signalTextColor: dark?"#aeb6c4":"#434c5e",
+    noteBkgColor: dark?"#434c5e":"#e5e9f0", noteTextColor: dark?"#eceff4":"#2e3440", noteBorderColor:"#81a1c1",
+    clusterBkg:"transparent"
+  },
+  flowchart:{ curve:"basis", padding:14, nodeSpacing:46, rankSpacing:54 }
+});
+// generic zoom + pan for every .mermaid-wrap
+document.querySelectorAll(".mermaid-wrap").forEach((wrap) => {
+  const canvas = wrap.querySelector(".mermaid-canvas");
+  let z=1.35, tx=0, ty=0, drag=false, sx=0, sy=0;
+  const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`;
+  apply();
+  wrap.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
+    const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,3); if(a==="out")z=Math.max(z-.2,.5);
+    if(a==="reset"){z=1.35;tx=0;ty=0;} apply();
+  });
+  wrap.addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey))return; e.preventDefault();
+    z=Math.min(3,Math.max(.5, z - e.deltaY*0.0016)); apply(); },{passive:false});
+  canvas.addEventListener("pointerdown",e=>{drag=true;canvas.classList.add("drag");sx=e.clientX-tx;sy=e.clientY-ty;canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener("pointermove",e=>{if(!drag)return;tx=e.clientX-sx;ty=e.clientY-sy;apply()});
+  canvas.addEventListener("pointerup",()=>{drag=false;canvas.classList.remove("drag")});
+});
+</script>
+</body>
+</html>
