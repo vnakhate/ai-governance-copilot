@@ -69,3 +69,38 @@ paths:
                 properties:
                   captured: { type: boolean }
                   vanta_record: { type: object }
+  /request:
+    post:
+      operationId: requestNewTool
+      summary: Submit a request to onboard a NEW (unknown) AI tool.
+      description: >
+        Use when the user wants to onboard a tool that isn't in the registry yet.
+        Captures a PENDING request; the open_questions in the response are the tier
+        attributes still needed for review. Routed to the governance team.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tool, data_types]
+              properties:
+                tool: { type: string }
+                vendor: { type: string }
+                source: { type: string, description: "vendor / internal / open-source" }
+                requested_by: { type: string }
+                department: { type: string }
+                intended_use: { type: string }
+                data_types: { type: array, items: { type: string } }
+                jurisdiction: { type: string }
+                high_risk_use: { type: boolean, description: "employment/credit/biometric/legal-medical" }
+      responses:
+        "200":
+          description: Pending request created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requested: { type: boolean }
+                  vanta_record: { type: object, description: "ai_vendor_request with status, tier, open_questions" }

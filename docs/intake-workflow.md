@@ -5,8 +5,8 @@ Captures how an employee or department lead requests onboarding of a **new** AI 
 NOT yet in the registry — it turns the "MEDIUM — needs review" dead-end into a tracked
 governance request.
 
-Status: DESIGN (not yet built). Extends the existing engine (`/assess`, `/capture`);
-see `docs/design.md` for the base architecture.
+Status: IMPLEMENTED — `POST /request` (`requestNewTool` action) on the existing engine.
+See `docs/design.md` for the base architecture; `endpoint/index.mjs` → `buildRequest()`.
 
 ## Why this exists
 
