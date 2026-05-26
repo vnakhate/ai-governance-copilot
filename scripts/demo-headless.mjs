@@ -20,7 +20,7 @@ async function post(path, body) {
     headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (!r.ok && r.status !== 200) {
+  if (!r.ok) {
     const t = await r.text();
     throw new Error(`${path} -> ${r.status}: ${t}`);
   }

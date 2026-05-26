@@ -116,24 +116,41 @@ export function recordAudit({ who, tool_id, data_type, jurisdiction, verdict, pr
     tool: tool_id ?? null,
     data: data_type ?? null,
     jurisdiction: jurisdiction ?? null,
-    verdict: verdict.risk_level,
-    proceeded: proceeded ?? null, // null = assessed only; true = went on to capture
+    verdict: verdict?.risk_level ?? null, // tolerate a missing/malformed verdict (F2)
+    proceeded: proceeded ?? null,         // null = assessed only; true = went on to capture
   };
-  appendFileSync(auditPath(), JSON.stringify(entry) + "\n");
+  try {
+    appendFileSync(auditPath(), JSON.stringify(entry) + "\n");
+  } catch (e) {
+    // An audit-write failure must never crash an assessment (F1). Log and continue.
+    console.error(`audit write failed: ${e.message}`);
+  }
   return entry;
 }
 function readAudit(limit = 50) {
+  let raw;
   try {
-    return readFileSync(auditPath(), "utf8").trim().split("\n").filter(Boolean)
-      .slice(-limit).map((l) => JSON.parse(l));
-  } catch { return []; }
+    raw = readFileSync(auditPath(), "utf8");
+  } catch (e) {
+    if (e.code === "ENOENT") return []; // no log yet — legitimate empty
+    console.error(`audit read failed: ${e.message}`);
+    return [];
+  }
+  // Skip/flag a corrupt line rather than blanking the whole trail (F4).
+  return raw.trim().split("\n").filter(Boolean).slice(-limit)
+    .map((l) => { try { return JSON.parse(l); } catch { return { error: "unparseable", raw: l }; } });
 }
 
 // --- HTTP plumbing -------------------------------------------------------
 function readBody(req) {
   return new Promise((resolve) => {
-    let b = ""; req.on("data", (c) => (b += c));
+    let b = "";
+    req.on("data", (c) => {
+      b += c;
+      if (b.length > 64 * 1024) { req.destroy(); resolve({}); } // F5: cap body, no memory blowup
+    });
     req.on("end", () => { try { resolve(b ? JSON.parse(b) : {}); } catch { resolve({}); } });
+    req.on("error", () => resolve({})); // F5: a mid-upload reset must not crash the server
   });
 }
 const json = (res, code, obj) => {

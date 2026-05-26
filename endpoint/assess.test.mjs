@@ -69,3 +69,14 @@ test("audit: recordAudit appends a JSONL line capturing the decision", () => {
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("audit: a write failure is swallowed (F1) and a missing verdict is null (F2)", () => {
+  process.env.AUDIT_LOG = "/no/such/dir/audit.jsonl"; // unwritable -> appendFileSync throws internally
+  try {
+    const entry = recordAudit({ who: "x", tool_id: "t", data_type: "customer_pii", jurisdiction: "EU", verdict: undefined, proceeded: null });
+    assert.equal(entry.verdict, null);          // F2: no crash on a missing verdict
+    assert.equal(entry.tool, "t");              // F1: returned normally despite the write failing
+  } finally {
+    delete process.env.AUDIT_LOG;
+  }
+});
