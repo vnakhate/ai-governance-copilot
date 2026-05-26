@@ -34,7 +34,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font
   background-image:radial-gradient(circle at 12% 4%, var(--terra-soft), transparent 38%),
                    radial-gradient(circle at 92% 2%, var(--sage-soft), transparent 36%);
   background-attachment:fixed;}
-.wrap{max-width:920px;margin:0 auto;padding:54px 22px 96px}
+.wrap{max-width:1280px;margin:0 auto;padding:54px 22px 96px}
 @media(prefers-reduced-motion:no-preference){
   .rise{opacity:0;transform:translateY(13px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
   @keyframes rise{to{opacity:1;transform:none}}
@@ -65,7 +65,7 @@ h2{font-size:23px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
 /* mermaid */
 .mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:hidden}
 .mermaid-canvas{display:flex;justify-content:center;cursor:grab;transition:transform .08s linear;transform-origin:center top}
-.mermaid-canvas.drag{cursor:grabbing}
+.mermaid-canvas.drag{cursor:grabbing} .mermaid svg{width:100%!important;height:auto!important;max-width:none!important;display:block}
 .zoom{position:absolute;top:11px;right:11px;display:flex;gap:5px;z-index:5}
 .zoom button{font-family:var(--mono);width:30px;height:30px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:6px;cursor:pointer;font-size:15px;line-height:1}
 .zoom button:hover{border-color:var(--terra);color:var(--terra)}
@@ -212,11 +212,11 @@ mermaid.initialize({
 });
 document.querySelectorAll(".mermaid-wrap").forEach((wrap)=>{
   const canvas=wrap.querySelector(".mermaid-canvas");
-  let z=1.25,tx=0,ty=0,drag=false,sx=0,sy=0;
+  let z=1,tx=0,ty=0,drag=false,sx=0,sy=0;
   const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`; apply();
   wrap.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
     const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,3); if(a==="out")z=Math.max(z-.2,.5);
-    if(a==="reset"){z=1.25;tx=0;ty=0;} apply();
+    if(a==="reset"){z=1;tx=0;ty=0;} apply();
   });
   wrap.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();z=Math.min(3,Math.max(.5,z-e.deltaY*0.0016));apply();},{passive:false});
   canvas.addEventListener("pointerdown",e=>{drag=true;canvas.classList.add("drag");sx=e.clientX-tx;sy=e.clientY-ty;canvas.setPointerCapture(e.pointerId)});

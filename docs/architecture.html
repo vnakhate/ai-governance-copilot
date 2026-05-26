@@ -39,7 +39,7 @@ body{
   background-image:radial-gradient(circle at 85% -5%, var(--frost-soft), transparent 40%);
   background-attachment:fixed;
 }
-.wrap{max-width:1060px;margin:0 auto;padding:52px 22px 90px}
+.wrap{max-width:1320px;margin:0 auto;padding:52px 22px 90px}
 @media(prefers-reduced-motion:no-preference){
   .rise{opacity:0;transform:translateY(13px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
   @keyframes rise{to{opacity:1;transform:none}}
@@ -60,7 +60,7 @@ h2{font-size:23px;margin:0 0 4px;letter-spacing:-.01em;font-weight:600}
 /* mermaid */
 .mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--line);border-radius:9px;padding:10px;overflow:hidden}
 .mermaid-canvas{display:flex;justify-content:center;cursor:grab;transition:transform .08s linear;transform-origin:center top}
-.mermaid-canvas.drag{cursor:grabbing}
+.mermaid-canvas.drag{cursor:grabbing} .mermaid svg{width:100%!important;height:auto!important;max-width:none!important;display:block}
 .zoom{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:5}
 .zoom button{font-family:var(--mono);width:30px;height:30px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);border-radius:5px;cursor:pointer;font-size:15px;line-height:1}
 .zoom button:hover{border-color:var(--frost);color:var(--frost)}
@@ -364,12 +364,12 @@ mermaid.initialize({
 // generic zoom + pan for every .mermaid-wrap
 document.querySelectorAll(".mermaid-wrap").forEach((wrap) => {
   const canvas = wrap.querySelector(".mermaid-canvas");
-  let z=1.35, tx=0, ty=0, drag=false, sx=0, sy=0;
+  let z=1, tx=0, ty=0, drag=false, sx=0, sy=0;
   const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`;
   apply();
   wrap.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
     const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,3); if(a==="out")z=Math.max(z-.2,.5);
-    if(a==="reset"){z=1.35;tx=0;ty=0;} apply();
+    if(a==="reset"){z=1;tx=0;ty=0;} apply();
   });
   wrap.addEventListener("wheel",e=>{ if(!(e.ctrlKey||e.metaKey))return; e.preventDefault();
     z=Math.min(3,Math.max(.5, z - e.deltaY*0.0016)); apply(); },{passive:false});
