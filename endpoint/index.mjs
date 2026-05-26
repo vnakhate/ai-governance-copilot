@@ -31,6 +31,37 @@ function classify(dataType) {
   return "Public";
 }
 
+// --- onboarding attribute tiers ------------------------------------------
+// Which attributes an onboarding decision DEMANDS rises with data sensitivity
+// and high-risk use (EU AI Act style). The engine enforces a representative
+// subset; docs/onboarding-attributes.html is the full ~55-attribute catalog.
+//   Tier 1 (baseline)  -> every tool
+//   Tier 2 (sensitive) -> Confidential data
+//   Tier 3 (high-risk) -> Regulated-PII, or a high-risk use flag
+export function riskTier(dataClass, highRiskUse = false) {
+  if (dataClass === "Regulated-PII" || highRiskUse) return 3;
+  if (dataClass === "Confidential") return 2;
+  return 1;
+}
+const TIER_ATTRS = {
+  1: ["source", "data_residency", "dpa_on_file", "certs", "approval_status", "training_excluded"],
+  2: ["sub_processors", "retention_days", "encryption", "dpia_done"],
+  3: ["model_type", "training_data_source", "bias_assessment", "human_oversight", "autonomy_level"],
+};
+export function requiredAttributes(tier) {
+  let keys = [];
+  for (let t = 1; t <= tier; t++) keys = keys.concat(TIER_ATTRS[t]);
+  return keys;
+}
+// present = answered (a known value). null/undefined/absent = missing.
+// empty array or 0 count as answered ("no certs" / "zero retention" are known).
+const isPresent = (v) => v !== undefined && v !== null;
+export function missingAttributes(profile, tier) {
+  const req = requiredAttributes(tier);
+  if (!profile) return req; // unknown tool: nothing is answered yet
+  return req.filter((k) => !isPresent(profile[k]));
+}
+
 // --- the verdict (single source of truth, decision 5A) -------------------
 // Rubric (fixed in design review so LOW is reachable for compliant PII vendors):
 //   Regulated-PII AND (no DPA OR non-EU residency)              -> HIGH
@@ -38,17 +69,20 @@ function classify(dataType) {
 //   Regulated-PII AND DPA AND EU AND cert AND approved          -> LOW (approved)
 //   Confidential/Internal AND approved                          -> LOW
 //   unknown tool / anything else / uncertain                   -> MEDIUM (needs review)
-export function assess(profile, dataType, jurisdiction) {
+export function assess(profile, dataType, jurisdiction, highRiskUse = false) {
+  const dataClass = classify(dataType);
+  const tier = riskTier(dataClass, highRiskUse);
   if (!profile) {
     return {
       risk_level: "MEDIUM",
       needs_review: true,
-      data_class: classify(dataType),
+      data_class: dataClass,
+      tier,
       why: "No risk profile on file for this tool, so no confident verdict.",
       required_controls: ["Governance team review"],
+      missing_attributes: missingAttributes(null, tier),
     };
   }
-  const dataClass = classify(dataType);
   const controls = profile.control_templates.map((c) => c.control);
   const hasCert = (profile.certs || []).length > 0;
   const dpa = !!profile.dpa_on_file;
@@ -84,8 +118,9 @@ export function assess(profile, dataType, jurisdiction) {
     risk_level = "LOW"; why = `${dataClass} data: low sensitivity.`;
   }
 
-  return { risk_level, needs_review, data_class: dataClass, why,
-           required_controls: controls.length ? controls : ["None — cleared for use"] };
+  return { risk_level, needs_review, data_class: dataClass, tier, why,
+           required_controls: controls.length ? controls : ["None — cleared for use"],
+           missing_attributes: missingAttributes(profile, tier) };
 }
 
 // --- profile -> Vanta record mapping (decision: capture matches verdict) -
@@ -165,9 +200,9 @@ const server = createServer(async (req, res) => {
   if (method === "GET" && url === "/audit") return json(res, 200, { entries: readAudit() });
 
   if (method === "POST" && (url === "/assess" || url === "/capture")) {
-    const { tool_id, data_type, jurisdiction, who } = await readBody(req);
+    const { tool_id, data_type, jurisdiction, who, high_risk_use } = await readBody(req);
     const profile = PROFILES[tool_id] || null;
-    const verdict = assess(profile, data_type, jurisdiction); // 5A: same fn both endpoints
+    const verdict = assess(profile, data_type, jurisdiction, high_risk_use); // 5A: same fn both endpoints
 
     if (url === "/assess") {
       recordAudit({ who, tool_id, data_type, jurisdiction, verdict, proceeded: null });
