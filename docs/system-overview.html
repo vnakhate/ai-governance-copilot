@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance Copilot — System Explainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c1a2b; --surface:#122236; --surface-2:#16293f; --recess:#0e1f33;
+  --border:rgba(120,170,220,.16); --border-strong:rgba(120,170,220,.32);
+  --grid:rgba(120,170,220,.055);
+  --text:#dce6f2; --text-dim:#8aa0ba; --text-faint:#5f7691;
+  --blue:#5b9bd5; --blue-bg:rgba(91,155,213,.12);
+  --high:#e8736a; --high-bg:rgba(232,115,106,.13); --high-bd:rgba(232,115,106,.4);
+  --med:#e3ac57;  --med-bg:rgba(227,172,87,.13);  --med-bd:rgba(227,172,87,.4);
+  --low:#5cc191;  --low-bg:rgba(92,193,145,.13);   --low-bd:rgba(92,193,145,.4);
+  --font:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#eef2f7; --surface:#ffffff; --surface-2:#f4f7fb; --recess:#e7edf4;
+    --border:rgba(30,70,120,.16); --border-strong:rgba(30,70,120,.3);
+    --grid:rgba(30,70,120,.05);
+    --text:#13314f; --text-dim:#4b6party; --text-dim:#4d6party; --text-dim:#4c6party;
+    --text-dim:#4d647e; --text-faint:#7990a8;
+    --blue:#1e5f9e; --blue-bg:rgba(30,95,158,.09);
+    --high:#c0392b; --high-bg:rgba(192,57,43,.09); --high-bd:rgba(192,57,43,.35);
+    --med:#b6791d;  --med-bg:rgba(182,121,29,.1);  --med-bd:rgba(182,121,29,.35);
+    --low:#1f7a52;  --low-bg:rgba(31,122,82,.1);    --low-bd:rgba(31,122,82,.35);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--text);font-family:var(--font);
+  line-height:1.55;-webkit-font-smoothing:antialiased;
+  background-image:
+    linear-gradient(var(--grid) 1px,transparent 1px),
+    linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:56px 24px 90px}
+@media(prefers-reduced-motion:no-preference){
+  .rise{opacity:0;transform:translateY(14px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
+  .rise:nth-child(2){animation-delay:.05s}.rise:nth-child(3){animation-delay:.1s}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+/* header */
+.tag{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--blue);display:inline-flex;align-items:center;gap:9px;border:1px solid var(--border);padding:6px 12px;border-radius:3px;background:var(--blue-bg)}
+.tag::before{content:"";width:7px;height:7px;background:var(--blue);border-radius:50%}
+h1{font-size:clamp(30px,5vw,46px);line-height:1.08;margin:22px 0 10px;letter-spacing:-.02em;font-weight:700}
+.sub{font-size:19px;color:var(--text-dim);max-width:62ch;margin:0}
+.meta{font-family:var(--mono);font-size:12.5px;color:var(--text-faint);margin-top:18px;display:flex;gap:18px;flex-wrap:wrap}
+.meta a{color:var(--blue);text-decoration:none;border-bottom:1px solid var(--border-strong)}
+/* section scaffolding */
+section{margin-top:54px}
+.label{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--text-dim);display:flex;align-items:center;gap:10px;margin-bottom:18px}
+.label::before{content:"";width:9px;height:9px;border:1.5px solid var(--blue);background:var(--blue-bg)}
+.label .n{color:var(--blue);font-weight:600}
+h2{font-size:24px;margin:0 0 4px;letter-spacing:-.01em;font-weight:600}
+/* eureka pull quote */
+.eureka{border-left:3px solid var(--blue);background:linear-gradient(90deg,var(--blue-bg),transparent);padding:18px 22px;margin:26px 0 0;border-radius:0 4px 4px 0}
+.eureka p{margin:0;font-size:18px;line-height:1.5}
+.eureka b{color:var(--blue)}
+/* cards */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:18px 18px 16px}
+.card h3{margin:0 0 6px;font-size:15px;font-family:var(--mono);font-weight:600;letter-spacing:.02em;display:flex;align-items:baseline;gap:9px}
+.card h3 .id{color:var(--blue);font-size:12.5px;border:1px solid var(--border-strong);padding:1px 7px;border-radius:3px;background:var(--blue-bg)}
+.card p{margin:0;font-size:14px;color:var(--text-dim)}
+.card.hero{background:var(--surface-2);border-color:var(--border-strong);box-shadow:0 6px 24px rgba(0,0,0,.18)}
+/* mermaid */
+.mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--border);border-radius:6px;padding:10px;overflow:hidden}
+.mermaid-canvas{display:flex;justify-content:center;cursor:grab;transition:transform .08s linear;transform-origin:center top}
+.mermaid-canvas.drag{cursor:grabbing}
+.zoom{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:5}
+.zoom button{font-family:var(--mono);width:30px;height:30px;border:1px solid var(--border-strong);background:var(--surface);color:var(--text);border-radius:4px;cursor:pointer;font-size:15px;line-height:1}
+.zoom button:hover{border-color:var(--blue);color:var(--blue)}
+.hint{font-family:var(--mono);font-size:11px;color:var(--text-faint);text-align:center;margin-top:8px}
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);padding:11px 14px;border-bottom:1px solid var(--border-strong)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+tbody tr:nth-child(even){background:var(--surface)}
+tbody tr:last-child td{border-bottom:none}
+td code,p code,li code{font-family:var(--mono);font-size:12.5px;background:var(--recess);border:1px solid var(--border);padding:1px 6px;border-radius:3px;color:var(--text)}
+.badge{font-family:var(--mono);font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:3px;border:1px solid;display:inline-block;white-space:nowrap}
+.b-high{color:var(--high);background:var(--high-bg);border-color:var(--high-bd)}
+.b-med{color:var(--med);background:var(--med-bg);border-color:var(--med-bd)}
+.b-low{color:var(--low);background:var(--low-bg);border-color:var(--low-bd)}
+.b-blue{color:var(--blue);background:var(--blue-bg);border-color:var(--border-strong)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:middle}
+.d-done{background:var(--low)} .d-wait{background:var(--med)}
+/* verdict mock card */
+.verdict{background:var(--surface);border:1px solid var(--border-strong);border-left:4px solid var(--high);border-radius:6px;padding:18px 20px;max-width:560px;font-size:14.5px}
+.verdict .hdr{font-weight:700;font-size:16px;display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.verdict .hdr .ring{width:13px;height:13px;border-radius:50%;background:var(--high);box-shadow:0 0 0 4px var(--high-bg)}
+.verdict .why{color:var(--text-dim);margin:0 0 12px}
+.verdict .ctl{font-family:var(--mono);font-size:12.5px;margin:0 0 4px;color:var(--text-dim)}
+.verdict ul{margin:6px 0 14px;padding-left:2px;list-style:none}
+.verdict li{position:relative;padding-left:26px;margin:5px 0;font-size:13.5px}
+.verdict li::before{content:"☐";position:absolute;left:4px;color:var(--high);font-family:var(--mono)}
+.verdict blockquote{margin:0 0 14px;padding:8px 14px;border-left:3px solid var(--border-strong);background:var(--recess);font-size:13px;color:var(--text-dim);border-radius:0 4px 4px 0}
+.verdict .actions{display:flex;gap:10px}
+.verdict .btn{font-family:var(--mono);font-size:13px;padding:7px 18px;border-radius:4px;border:1px solid var(--border-strong);background:var(--surface-2);color:var(--text)}
+.verdict .btn.y{border-color:var(--blue);color:var(--blue);background:var(--blue-bg)}
+/* lists */
+.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:10px}
+.steps li{counter-increment:s;position:relative;padding:13px 16px 13px 50px;background:var(--surface);border:1px solid var(--border);border-radius:6px;font-size:14px}
+.steps li::before{content:counter(s);position:absolute;left:14px;top:12px;width:24px;height:24px;font-family:var(--mono);font-size:12px;font-weight:600;color:var(--blue);background:var(--blue-bg);border:1px solid var(--border-strong);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.steps b{color:var(--text)}
+footer{margin-top:60px;padding-top:22px;border-top:1px solid var(--border);font-family:var(--mono);font-size:12px;color:var(--text-faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="rise">
+    <span class="tag">Glean Agent · Hackathon build</span>
+    <h1>AI Governance Copilot</h1>
+    <p class="sub">An employee asks in plain language. The copilot returns a structured risk verdict grounded in company policy — and, only with a yes, captures the decision into Vanta.</p>
+    <div class="meta">
+      <span>repo · <a href="https://github.com/vnakhate/ai-governance-copilot">vnakhate/ai-governance-copilot</a></span>
+      <span>status · plan complete, endpoint built &amp; tested</span>
+      <span>next · Glean wiring (smoke test)</span>
+    </div>
+  </header>
+
+  <div class="eureka rise">
+    <p><b>The thesis.</b> AI governance is usually a back-office GRC portal employees avoid. But shadow AI leaks at the <b>per-use-case decision moment</b>. This copilot lives inside the assistant they already use, and answers at the moment of need.</p>
+  </div>
+
+  <section>
+    <div class="label"><span class="n">01</span> System flow</div>
+    <h2>One question to a logged decision</h2>
+    <div class="mermaid-wrap" id="mw">
+      <div class="zoom"><button data-z="out">−</button><button data-z="reset">⟳</button><button data-z="in">+</button></div>
+      <div class="mermaid-canvas" id="mc">
+<pre class="mermaid">
+flowchart TD
+  Q["Employee: &quot;Can we use Acme<br/>Notetaker on customer calls?&quot;"] --> AG["Glean Agent<br/><small>extracts tool · data · jurisdiction</small>"]
+  POL[("Indexed AI policy<br/>(Glean retrieval)")] -. cites .-> AG
+  AG --> AS["POST /assess<br/><small>read-only · verdict in code</small>"]
+  AS --> V{"Risk verdict<br/>+ required controls"}
+  V --> SHOW["Agent renders verdict<br/>badge · controls · §3.2 citation"]
+  SHOW --> ASK{"Onboard into Vanta?"}
+  ASK -->|No| STOP["Nothing logged"]
+  ASK -->|Yes| CAP["POST /capture<br/><small>gated write · same assess()</small>"]
+  CAP --> VANTA[("Vanta record<br/>risk + controls + owner")]
+  classDef ep fill:#16293f,stroke:#5b9bd5,color:#dce6f2;
+  classDef store fill:#0e1f33,stroke:#8aa0ba,color:#8aa0ba;
+  classDef gate fill:#122236,stroke:#e3ac57,color:#e3ac57;
+  class AS,CAP ep; class POL,VANTA store; class ASK gate;
+</pre>
+      </div>
+    </div>
+    <div class="hint">Ctrl/⌘ + scroll to zoom · drag to pan · the write fires only after “Yes”</div>
+  </section>
+
+  <section>
+    <div class="label"><span class="n">02</span> Architecture decisions</div>
+    <h2>What got locked in review</h2>
+    <div class="grid g2">
+      <div class="card hero rise"><h3><span class="id">1A</span> Verdict in code</h3><p>The risk verdict is computed in the endpoint as a pure <code>assess()</code> function, not LLM reasoning. Glean needs a hosted endpoint anyway, so the verdict rides along — deterministic and unit-testable.</p></div>
+      <div class="card hero rise"><h3><span class="id">2A</span> Profiles in code, policy indexed</h3><p>Tool profiles drive the verdict; the policy corpus is indexed into Glean so the agent <em>cites real clauses</em>. That's the honest answer to “what is Glean doing here?”</p></div>
+      <div class="card rise"><h3><span class="id">4A</span> Two gated actions</h3><p><code>/assess</code> is read-only; <code>/capture</code> writes to Vanta and fires only after an explicit “Yes”.</p></div>
+      <div class="card"><h3><span class="id">5A</span> Single source of truth</h3><p>Both actions call the same <code>assess()</code>, so the captured record is provably identical to the verdict shown.</p></div>
+      <div class="card"><h3><span class="id">3B</span> ngrok hosting</h3><p>Tunnel to localhost for fast iteration. Mitigations: reserved domain, recorded backup clip, phone hotspot.</p></div>
+      <div class="card"><h3><span class="id">Dual</span> Chat + headless</h3><p>Chat copilot for the demo; the same <code>/assess</code>+<code>/capture</code> core is callable headlessly by procurement / ITSM / a script.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="label"><span class="n">03</span> Risk rubric</div>
+    <h2>Deterministic, in <code>assess()</code> — aligned to policy §3.2</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Condition (data × tool × jurisdiction)</th><th style="width:150px">Verdict</th><th>Example tool</th></tr></thead>
+        <tbody>
+          <tr><td>Regulated-PII <b>and</b> (no DPA <b>or</b> non-EU residency)</td><td><span class="badge b-high">HIGH</span></td><td><code>acme-notetaker</code></td></tr>
+          <tr><td>Regulated-PII <b>and</b> DPA <b>and</b> EU <b>and</b> no cert</td><td><span class="badge b-med">MEDIUM</span></td><td><code>noteflow-eu</code></td></tr>
+          <tr><td>Regulated-PII <b>and</b> DPA <b>and</b> EU <b>and</b> cert <b>and</b> approved</td><td><span class="badge b-low">LOW</span></td><td><code>claude-bedrock-internal</code></td></tr>
+          <tr><td>Confidential / Internal <b>and</b> approved</td><td><span class="badge b-low">LOW</span></td><td>—</td></tr>
+          <tr><td>Unknown tool / anything else / uncertain</td><td><span class="badge b-med">MEDIUM</span> <small>needs review</small></td><td>off-set tools</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="label"><span class="n">04</span> What the employee sees</div>
+    <h2>The verdict, rendered in Glean chat</h2>
+    <div class="verdict rise">
+      <div class="hdr"><span class="ring"></span>HIGH RISK — Acme AI Notetaker</div>
+      <p class="why">Regulated-PII via Acme AI Notetaker: no DPA on file, US data residency vs EU requirement (GDPR gap).</p>
+      <p class="ctl">Required before use:</p>
+      <ul><li>Signed DPA</li><li>EU data residency</li><li>Retention &lt; 30 days</li></ul>
+      <blockquote>Per AI Acceptable Use Policy §3.2 — view policy</blockquote>
+      <div class="actions"><span class="btn y">Yes</span><span class="btn">No</span></div>
+    </div>
+    <div class="hint" style="text-align:left;margin-top:10px">Signal = emoji ring + WORD + color (never color alone) so it survives markdown rendering and stays accessible.</div>
+  </section>
+
+  <section>
+    <div class="label"><span class="n">05</span> Build status</div>
+    <h2>Done vs. needs your Glean instance</h2>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Component</th><th style="width:130px">Status</th><th>Evidence</th></tr></thead>
+        <tbody>
+          <tr><td>Risk endpoint <code>/assess</code> + <code>/capture</code></td><td><span class="dot d-done"></span>Built</td><td>runs locally; 5 curl cases verified</td></tr>
+          <tr><td>Rubric <code>assess()</code></td><td><span class="dot d-done"></span>Tested</td><td><code>node --test</code> → 6/6 pass</td></tr>
+          <tr><td>Tool profiles (3)</td><td><span class="dot d-done"></span>Authored</td><td>HIGH / MEDIUM / approved-LOW</td></tr>
+          <tr><td>Policy corpus (AUP + classification)</td><td><span class="dot d-done"></span>Written</td><td>§-numbered; §3.2 = the cited clause</td></tr>
+          <tr><td>Agent instructions + 16 eval cases</td><td><span class="dot d-done"></span>Drafted</td><td>paste-ready for Agent Builder</td></tr>
+          <tr><td>OpenAPI spec for Glean actions</td><td><span class="dot d-done"></span>Written</td><td><code>endpoint/glean-action.yaml</code></td></tr>
+          <tr><td>Glean wiring: index, register action, agent</td><td><span class="dot d-wait"></span>Your turn</td><td>needs your Glean instance + login</td></tr>
+          <tr><td>Live Vanta API write</td><td><span class="dot d-wait"></span>Stretch</td><td>mocked for the demo</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="label"><span class="n">06</span> Next — smoke test</div>
+    <h2>Test the black boxes first, gating last</h2>
+    <ol class="steps">
+      <li><b>Reach it:</b> <code>npm start</code> → <code>ngrok http 8787</code>; register <code>glean-action.yaml</code>. Confirm Glean actually calls the endpoint.</li>
+      <li><b>Cite it:</b> index <code>policy/*.md</code>; confirm retrieval cites the correct §3.2 clause — not a vague paragraph. <span class="badge b-blue">hero risk</span></li>
+      <li><b>Render it:</b> verdict shows legibly in chat per the rendering spec.</li>
+      <li><b>Gate it:</b> wire the agent; confirm <code>/capture</code> fires only after “Yes” (say “No” once → no write).</li>
+    </ol>
+  </section>
+
+  <footer>
+    Generated by /visual-explainer · self-contained · design + eng + design reviews CLEARED · ai-governance-copilot
+  </footer>
+</div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+mermaid.initialize({
+  startOnLoad:true, securityLevel:"loose",
+  theme:"base",
+  themeVariables:{
+    fontFamily:'"IBM Plex Mono", monospace', fontSize:"15px",
+    primaryColor: dark?"#16293f":"#ffffff",
+    primaryTextColor: dark?"#dce6f2":"#13314f",
+    primaryBorderColor:"#5b9bd5",
+    lineColor: dark?"#7d98b6":"#5e7a99",
+    tertiaryColor: dark?"#0e1f33":"#eef2f7",
+    clusterBkg:"transparent"
+  },
+  flowchart:{ curve:"basis", padding:14, nodeSpacing:42, rankSpacing:52 }
+});
+// zoom + pan
+const canvas=document.getElementById("mc");
+let z=1.05, tx=0, ty=0, drag=false, sx=0, sy=0;
+const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`;
+apply();
+document.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
+  const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,3); if(a==="out")z=Math.max(z-.2,.5);
+  if(a==="reset"){z=1.05;tx=0;ty=0;} apply();
+});
+document.getElementById("mw").addEventListener("wheel",e=>{
+  if(!(e.ctrlKey||e.metaKey))return; e.preventDefault();
+  z=Math.min(3,Math.max(.5, z - e.deltaY*0.0016)); apply();
+},{passive:false});
+canvas.addEventListener("pointerdown",e=>{drag=true;canvas.classList.add("drag");sx=e.clientX-tx;sy=e.clientY-ty;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener("pointermove",e=>{if(!drag)return;tx=e.clientX-sx;ty=e.clientY-sy;apply()});
+canvas.addEventListener("pointerup",()=>{drag=false;canvas.classList.remove("drag")});
+</script>
+</body>
+</html>

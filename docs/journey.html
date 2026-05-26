@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance Copilot — the gstack journey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fbfaf6; --surface:#ffffff; --surface-2:#f4f1ea; --line:#e6e0d3;
+  --ink:#22252c; --ink-dim:#5b6068; --ink-faint:#8b8f97;
+  --navy:#1e3a5f; --navy-soft:rgba(30,58,95,.08);
+  --gold:#b0852f; --gold-soft:rgba(176,133,47,.13);
+  --done:#5a7d4f; --done-soft:rgba(90,125,79,.14);
+  --pend:#b0852f; --pend-soft:rgba(176,133,47,.16);
+  --serif:"Newsreader",Georgia,serif;
+  --display:"Instrument Serif",Georgia,serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#13151b; --surface:#1a1d25; --surface-2:#20242e; --line:#2c313c;
+    --ink:#e7e3d8; --ink-dim:#a4a8b2; --ink-faint:#717682;
+    --navy:#7fa9d6; --navy-soft:rgba(127,169,214,.12);
+    --gold:#d6ab5e; --gold-soft:rgba(214,171,94,.15);
+    --done:#7fb86e; --done-soft:rgba(127,184,110,.16);
+    --pend:#d6ab5e; --pend-soft:rgba(214,171,94,.16);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);font-family:var(--serif);
+  font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 18% 8%, var(--gold-soft), transparent 42%),
+                   radial-gradient(circle at 90% 0%, var(--navy-soft), transparent 38%);
+  background-attachment:fixed;
+}
+.wrap{max-width:880px;margin:0 auto;padding:64px 24px 100px}
+@media(prefers-reduced-motion:no-preference){
+  .rise{opacity:0;transform:translateY(16px);animation:rise .7s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+/* header */
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold)}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(40px,7vw,68px);line-height:1.02;margin:14px 0 0;letter-spacing:.005em}
+h1 em{font-style:italic;color:var(--navy)}
+.dek{font-size:21px;color:var(--ink-dim);max-width:60ch;margin:18px 0 0;line-height:1.45}
+.arc{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);margin-top:22px;line-height:1.9}
+.arc b{color:var(--navy);font-weight:600}
+/* stat strip */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:38px 0 8px}
+.stat{background:var(--surface);padding:16px 14px;text-align:center}
+.stat b{display:block;font-family:var(--display);font-size:30px;line-height:1;color:var(--navy)}
+.stat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);display:block;margin-top:7px}
+/* timeline */
+.tl{position:relative;margin:46px 0 0;padding-left:38px}
+.tl::before{content:"";position:absolute;left:9px;top:6px;bottom:40px;width:2px;background:linear-gradient(var(--gold),var(--navy))}
+.ph{position:relative;margin-bottom:26px}
+.ph::before{content:"";position:absolute;left:-34px;top:5px;width:14px;height:14px;border-radius:50%;background:var(--surface);border:2.5px solid var(--gold);box-shadow:0 0 0 4px var(--bg)}
+.ph.done::before{border-color:var(--done);background:var(--done)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:18px 20px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+.card.hero{background:var(--surface-2);border-color:var(--gold);box-shadow:0 8px 30px rgba(30,58,95,.07)}
+.skill{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--navy);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:20px;border:1px solid}
+.t-done{color:var(--done);background:var(--done-soft);border-color:var(--done)}
+.t-pend{color:var(--pend);background:var(--pend-soft);border-color:var(--pend)}
+.card h3{font-family:var(--display);font-weight:400;font-size:23px;margin:8px 0 4px;line-height:1.12}
+.card p{margin:4px 0 0;color:var(--ink-dim);font-size:16px}
+.out{margin:12px 0 0;font-family:var(--mono);font-size:12px;color:var(--ink-faint);border-top:1px solid var(--line);padding-top:10px}
+.out b{color:var(--ink-dim);font-weight:600}
+/* eureka pull quote */
+.quote{font-family:var(--display);font-weight:400;font-style:italic;font-size:25px;line-height:1.32;color:var(--navy);border-left:3px solid var(--gold);padding:6px 0 6px 22px;margin:8px 0 0}
+/* closing callout */
+.callout{margin:44px 0 0;background:var(--navy);color:#f3efe4;border-radius:14px;padding:26px 28px}
+@media (prefers-color-scheme: dark){ .callout{background:var(--surface-2);color:var(--ink);border:1px solid var(--gold)} }
+.callout .lab{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold)}
+.callout h2{font-family:var(--display);font-weight:400;font-size:28px;margin:8px 0 10px}
+.callout ol{margin:0;padding-left:20px}
+.callout li{margin:6px 0;font-size:15.5px;opacity:.92}
+.callout code{font-family:var(--mono);font-size:12.5px;background:rgba(255,255,255,.12);padding:1px 6px;border-radius:4px}
+@media (prefers-color-scheme: dark){ .callout code{background:rgba(255,255,255,.06)} }
+footer{margin-top:40px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);text-align:center}
+footer a{color:var(--navy)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="rise">
+    <div class="kicker">One session · gstack pipeline</div>
+    <h1>From a one-line idea<br>to a <em>merged, reviewed</em> product</h1>
+    <p class="dek">"Develop a Glean app for AI governance." Eight skills later, it's a deterministic verdict engine with a chat copilot, an audit trail, a roadmap, and a clean PR on <span style="font-family:var(--mono);font-size:15px">main</span>.</p>
+    <div class="arc">idea → <b>office-hours</b> → <b>eng-review</b> → repo + smoke → <b>visual-explainer</b> → <b>ceo-review</b> → <b>work</b> → <b>review</b> → <b>land-and-deploy</b></div>
+
+    <div class="stats">
+      <div class="stat"><b>8</b><span>skills run</span></div>
+      <div class="stat"><b>6</b><span>commits on main</span></div>
+      <div class="stat"><b>8/8</b><span>tests pass</span></div>
+      <div class="stat"><b>3</b><span>reviews cleared</span></div>
+      <div class="stat"><b>#1</b><span>PR merged</span></div>
+    </div>
+  </header>
+
+  <div class="tl">
+
+    <div class="ph done rise">
+      <div class="card hero">
+        <div class="skill">/office-hours <span class="tag t-done">design doc</span></div>
+        <h3>Found the magic moment</h3>
+        <p>Builder-mode brainstorm. Chose a governance <em>copilot</em> over an app-store or shadow-radar; the heart became a structured risk verdict, captured into Vanta.</p>
+        <div class="quote">Shadow AI leaks at the employee's decision moment — so put governance inside the assistant they already use.</div>
+        <div class="out"><b>Out:</b> design doc · problem, schemas, the eureka</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card">
+        <div class="skill">/plan-eng-review <span class="tag t-done">CLEARED</span></div>
+        <h3>Locked the architecture</h3>
+        <p>A search grounded it: Glean needs a hosted endpoint anyway, so compute the verdict in <em>code</em>, not the prompt — deterministic and testable. Two gated actions; one shared <span style="font-family:var(--mono);font-size:14px">assess()</span>.</p>
+        <div class="out"><b>Out:</b> 7 decisions · test plan · 0 critical gaps</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card">
+        <div class="skill">repo + smoke test <span class="tag t-done">verified</span></div>
+        <h3>Built the engine half</h3>
+        <p>Stood up a private repo and the zero-dep endpoint. Ran it: HIGH / MEDIUM / LOW verdicts and a matching Vanta record, all by curl. The Glean half stays a manual smoke test.</p>
+        <div class="out"><b>Out:</b> /assess + /capture · 6 unit tests green</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card">
+        <div class="skill">/visual-explainer <span class="tag t-done">system page</span></div>
+        <h3>Drew the system</h3>
+        <p>A Blueprint page of the loop, the rubric, the locked decisions, and the build status — shareable, self-contained.</p>
+        <div class="out"><b>Out:</b> ai-governance-copilot.html</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card hero">
+        <div class="skill">/plan-ceo-review <span class="tag t-done">CLEARED</span></div>
+        <h3>Found the North Star</h3>
+        <p>The reframe: it isn't a chatbot, it's a governance <em>engine</em> many surfaces call — chat is client #1. Two cheap demo wins accepted; discovery, multi-tenant, Slack, procurement sent to a roadmap.</p>
+        <div class="out"><b>Out:</b> CEO plan (9/10) · docs/roadmap.md</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card">
+        <div class="skill">/work <span class="tag t-done">CT1 + CT2</span></div>
+        <h3>Shipped the two additions</h3>
+        <p>Built the append-only audit trail (every decision, the moat) and a headless demo script proving the same engine answers off-chat. Branch, tests, PR.</p>
+        <div class="out"><b>Out:</b> PR #1 · 7th test added</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card">
+        <div class="skill">/review <span class="tag t-done">5 bugs fixed</span></div>
+        <h3>Hardened it before landing</h3>
+        <p>An adversarial pass caught five resilience holes — an unguarded audit write that could crash the endpoint live, a corrupt-line trap, an unbounded body. All fixed, with a new test.</p>
+        <div class="out"><b>Out:</b> F1·F2·F4·F5·F9 fixed · 8/8 · quality 9/10</div>
+      </div>
+    </div>
+
+    <div class="ph done rise">
+      <div class="card hero">
+        <div class="skill">/land-and-deploy <span class="tag t-done">MERGED</span></div>
+        <h3>Landed PR #1</h3>
+        <p>Readiness green, squash-merged to <span style="font-family:var(--mono);font-size:14px">main</span>, branch deleted. No deploy step — it's a local tool until it's wired into Glean.</p>
+        <div class="out"><b>Out:</b> main @ 6884502 · tests green post-merge</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="callout rise">
+    <div class="lab">What's left — yours + Glean</div>
+    <h2>The only steps a tool can't take for you</h2>
+    <ol>
+      <li>Smoke test on your instance: <code>npm start</code> → <code>ngrok http 8787</code> → register <code>glean-action.yaml</code> → index <code>policy/*.md</code>.</li>
+      <li>Confirm retrieval cites §3.2 and <code>/capture</code> fires only after a "Yes".</li>
+      <li>Paste <code>agent/instructions.md</code>, run the eval subset, rehearse the hero + dual-surface beats, record a backup clip.</li>
+    </ol>
+  </div>
+
+  <footer>
+    Generated by /visual-explainer · <a href="https://github.com/vnakhate/ai-governance-copilot">vnakhate/ai-governance-copilot</a> · the idea is now a company-shaped question
+  </footer>
+</div>
+</body>
+</html>
