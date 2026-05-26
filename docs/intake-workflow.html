@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New-Tool Request Workflow — AI Governance Copilot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Azeret+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Paper / ink — warm, informal, light-first */
+:root{
+  --bg:#faf7f5; --surface:#ffffff; --surface-2:#f3ede8; --recess:#f1ebe5; --line:#e7ddd4; --line-2:#d8cabd;
+  --ink:#33291f; --ink-dim:#6f6258; --ink-faint:#9a8e83;
+  --terra:#c2410c; --terra-soft:rgba(194,65,12,.1);
+  --sage:#5f7d2e; --sage-soft:rgba(95,125,46,.12);
+  --amber:#b06d12; --amber-soft:rgba(176,109,18,.13);
+  --red:#b23b3b; --red-soft:rgba(178,59,59,.12);
+  --sans:"Plus Jakarta Sans",system-ui,sans-serif; --mono:"Azeret Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#211b16; --surface:#2a231d; --surface-2:#322a23; --recess:#1d1814; --line:#3d342c; --line-2:#4f4439;
+    --ink:#f0e7df; --ink-dim:#c2b4a8; --ink-faint:#8f8175;
+    --terra:#e8854f; --terra-soft:rgba(232,133,79,.14);
+    --sage:#9bb568; --sage-soft:rgba(155,181,104,.14);
+    --amber:#d6a24e; --amber-soft:rgba(214,162,78,.15);
+    --red:#d97070; --red-soft:rgba(217,112,112,.14);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.62;
+  -webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 12% 4%, var(--terra-soft), transparent 38%),
+                   radial-gradient(circle at 92% 2%, var(--sage-soft), transparent 36%);
+  background-attachment:fixed;}
+.wrap{max-width:920px;margin:0 auto;padding:54px 22px 96px}
+@media(prefers-reduced-motion:no-preference){
+  .rise{opacity:0;transform:translateY(13px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--terra);display:inline-flex;gap:9px;align-items:center}
+.kicker .st{font-size:10px;letter-spacing:.08em;padding:2px 8px;border-radius:20px;border:1px solid var(--amber);color:var(--amber);background:var(--amber-soft)}
+h1{font-size:clamp(31px,5.3vw,46px);line-height:1.05;margin:16px 0 8px;letter-spacing:-.02em;font-weight:700}
+.dek{font-size:18px;color:var(--ink-dim);max-width:64ch;margin:0}
+section{margin-top:46px}
+.lab{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.lab .n{color:var(--terra);font-weight:600}
+.lab::after{content:"";flex:1;height:1px;background:var(--line)}
+h2{font-size:23px;margin:0 0 4px;font-weight:700;letter-spacing:-.01em}
+.intro{color:var(--ink-dim);margin:0 0 18px;max-width:70ch}
+/* entry cards */
+.grid2{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.card .tg{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--terra);background:var(--terra-soft);border:1px solid var(--line-2);padding:2px 9px;border-radius:20px;display:inline-block;margin-bottom:9px}
+.card h3{margin:0 0 5px;font-size:17px;font-weight:600}
+.card p{margin:0;font-size:14.5px;color:var(--ink-dim)}
+.card p code{font-family:var(--mono);font-size:12.5px;background:var(--recess);border:1px solid var(--line);padding:1px 5px;border-radius:4px}
+/* steps */
+.steps{list-style:none;counter-reset:s;padding:0;margin:0;display:grid;gap:11px}
+.steps li{counter-increment:s;position:relative;padding:14px 18px 14px 56px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:15px}
+.steps li::before{content:counter(s);position:absolute;left:16px;top:13px;width:26px;height:26px;font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;background:var(--terra);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.steps li b{font-weight:600}
+.steps li .fields{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin-top:6px;display:block;line-height:1.7}
+/* mermaid */
+.mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--line);border-radius:12px;padding:12px;overflow:hidden}
+.mermaid-canvas{display:flex;justify-content:center;cursor:grab;transition:transform .08s linear;transform-origin:center top}
+.mermaid-canvas.drag{cursor:grabbing}
+.zoom{position:absolute;top:11px;right:11px;display:flex;gap:5px;z-index:5}
+.zoom button{font-family:var(--mono);width:30px;height:30px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:6px;cursor:pointer;font-size:15px;line-height:1}
+.zoom button:hover{border-color:var(--terra);color:var(--terra)}
+.hint{font-family:var(--mono);font-size:11px;color:var(--ink-faint);text-align:center;margin-top:9px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%}
+.d-pend{background:var(--amber)} .d-app{background:var(--sage)} .d-rej{background:var(--red)}
+/* code */
+.code{background:var(--recess);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.code .hd{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);padding:9px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+.code pre{margin:0;padding:15px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;line-height:1.55;white-space:pre;color:var(--ink)}
+.code .k{color:var(--terra)} .code .s{color:var(--sage)} .code .c{color:var(--ink-faint)}
+/* reuse table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;margin-top:14px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+thead th{background:var(--surface-2);text-align:left;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);padding:11px 15px;border-bottom:1px solid var(--line-2)}
+td{padding:11px 15px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-dim)}
+td:first-child{color:var(--sage)} td:last-child{color:var(--terra)}
+tbody tr:last-child td{border-bottom:none}
+td code{font-family:var(--mono);font-size:12px;background:var(--surface);border:1px solid var(--line);padding:1px 5px;border-radius:4px;color:var(--ink)}
+.note{background:var(--terra-soft);border:1px solid var(--line-2);border-left:3px solid var(--terra);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:16px;font-size:14.5px;color:var(--ink-dim)}
+.note b{color:var(--ink)}
+footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="rise">
+    <div class="kicker">Intake workflow <span class="st">design · not yet built</span></div>
+    <h1>Request a new AI tool</h1>
+    <p class="dek">How an employee asks the Glean agent to onboard a tool that isn't in the registry yet. Turns the "needs review" dead-end into a tracked governance request.</p>
+  </header>
+
+  <section>
+    <div class="lab"><span class="n">01</span> Entry points</div>
+    <h2>Two ways in</h2>
+    <div class="grid2">
+      <div class="card rise"><span class="tg">reactive</span><h3>From a dead-end verdict</h3><p>An <code>/assess</code> returns <code>needs_review</code> for an unknown tool, and the user says "request it" / "get it reviewed."</p></div>
+      <div class="card rise"><span class="tg">proactive</span><h3>Opening with intent</h3><p>"I want to use [tool]" / "can we get [tool] approved for my team?" — the agent recognizes onboarding intent up front.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">02</span> Conversation</div>
+    <h2>What the agent does</h2>
+    <p class="intro">The agent collects only the fields it's missing, runs a best-effort provisional read, confirms, then writes a pending request. It captures and routes — it never adjudicates.</p>
+    <ol class="steps">
+      <li class="rise"><b>Recognize</b> the "request new tool" intent.</li>
+      <li class="rise"><b>Collect</b> the intake fields (only what's missing):<span class="fields">tool + vendor (or internal + team) · vendor URL · intended use · data types · department + requester · jurisdiction</span></li>
+      <li class="rise"><b>Provisionally assess</b> on what's known, and list the unknowns a reviewer must resolve (<code style="font-family:var(--mono);font-size:12.5px">open_questions</code>).</li>
+      <li class="rise"><b>Confirm</b> the summary: "Submit this request? [Yes / Edit]".</li>
+      <li class="rise"><b>On Yes &rarr; POST /request</b>: write a PENDING record + audit('requested') + (optional) a governance ticket.</li>
+      <li class="rise"><b>Return</b> the tracking ID: "Logged as VND-2026-0148 (PENDING). Routed to governance@. You'll be notified."</li>
+    </ol>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">03</span> Lifecycle</div>
+    <h2>State machine — the agent owns only <code>requested</code></h2>
+    <p class="intro">After submission, the governance team drives every transition in Vanta. The agent's job ends at capture + routing.</p>
+    <div class="mermaid-wrap" id="w1">
+      <div class="zoom"><button data-z="out">&minus;</button><button data-z="reset">&#8635;</button><button data-z="in">+</button></div>
+      <div class="mermaid-canvas">
+<pre class="mermaid">
+stateDiagram-v2
+  [*] --> requested
+  requested --> under_review: triage
+  under_review --> approved: approve
+  under_review --> rejected: reject
+  under_review --> info_requested: needs info
+  info_requested --> requested: resubmit
+  approved --> [*]
+  rejected --> [*]
+</pre>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i class="dot d-pend"></i> requested / under_review / info_requested (pending)</span>
+      <span><i class="dot d-app"></i> approved &rarr; joins the tool registry</span>
+      <span><i class="dot d-rej"></i> rejected &rarr; requester notified</span>
+    </div>
+    <div class="hint">Ctrl/&#8984; + scroll to zoom · drag to pan</div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">04</span> The captured request</div>
+    <h2>A distinct record — <code>ai_vendor_request</code></h2>
+    <p class="intro">Different from the <code>ai_vendor_risk</code> record <code>/capture</code> writes: there's no confident verdict yet, just a pending item with open questions.</p>
+    <div class="code rise">
+      <div class="hd">POST /request &rarr; ai_vendor_request</div>
+<pre>{
+  <span class="k">"record_id"</span>: <span class="s">"VND-2026-0148"</span>,
+  <span class="k">"object"</span>: <span class="s">"ai_vendor_request"</span>,
+  <span class="k">"status"</span>: <span class="s">"pending_review"</span>,
+  <span class="k">"tool"</span>: <span class="s">"Otter.ai"</span>, <span class="k">"vendor"</span>: <span class="s">"Otter"</span>, <span class="k">"source"</span>: <span class="s">"vendor"</span>,
+  <span class="k">"requested_by"</span>: <span class="s">"alice@co"</span>, <span class="k">"department"</span>: <span class="s">"Sales"</span>,
+  <span class="k">"intended_use"</span>: <span class="s">"summarize customer discovery calls"</span>,
+  <span class="k">"data_types"</span>: [<span class="s">"call_audio"</span>, <span class="s">"customer_pii"</span>],
+  <span class="k">"jurisdiction"</span>: <span class="s">"EU"</span>,
+  <span class="k">"provisional_verdict"</span>: <span class="s">"HIGH (provisional - vendor unverified)"</span>,
+  <span class="k">"open_questions"</span>: [<span class="s">"DPA on file?"</span>, <span class="s">"data residency?"</span>, <span class="s">"SOC2/ISO?"</span>],
+  <span class="k">"requested_at"</span>: <span class="s">"&lt;iso&gt;"</span>
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <div class="lab"><span class="n">05</span> Plugging in</div>
+    <h2>One new action, riding the existing engine</h2>
+    <div class="note rise"><b>Decision:</b> a dedicated <code style="font-family:var(--mono);font-size:13px">requestNewTool</code> action &rarr; <code style="font-family:var(--mono);font-size:13px">POST /request</code>. <code>/assess</code> = known tools, <code>/capture</code> = write a verdict, <code>/request</code> = new/unknown &rarr; pending. It reuses <code>assess()</code> for the provisional read but writes a request object, not a risk record. (Overloading <code>/capture</code> with a <code>pending</code> flag was rejected — it blurs "decision" vs "open request" and muddies the audit trail.)</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Reused (already built)</th><th>New (to build)</th></tr></thead>
+        <tbody>
+          <tr><td><code>assess()</code> rubric (provisional)</td><td><code>POST /request</code> endpoint</td></tr>
+          <tr><td>audit trail mechanism</td><td><code>ai_vendor_request</code> record + <code>requested</code> event</td></tr>
+          <tr><td>Glean custom-action pattern</td><td><code>requestNewTool</code> action + intake conversation</td></tr>
+          <tr><td><code>data_type</code> classification</td><td>request <code>status</code> field</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated by /visual-explainer · companion to docs/intake-workflow.md · vnakhate/ai-governance-copilot · Paper/ink · Plus Jakarta Sans + Azeret Mono
+  </footer>
+</div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+mermaid.initialize({
+  startOnLoad:true, securityLevel:"loose", theme:"base",
+  themeVariables:{
+    fontFamily:'"Azeret Mono", monospace', fontSize:"16px",
+    primaryColor: dark?"#322a23":"#ffffff",
+    primaryTextColor: dark?"#f0e7df":"#33291f",
+    primaryBorderColor:"#c2410c",
+    lineColor: dark?"#a08b78":"#9a8e83",
+    tertiaryColor: dark?"#1d1814":"#f3ede8"
+  }
+});
+document.querySelectorAll(".mermaid-wrap").forEach((wrap)=>{
+  const canvas=wrap.querySelector(".mermaid-canvas");
+  let z=1.25,tx=0,ty=0,drag=false,sx=0,sy=0;
+  const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`; apply();
+  wrap.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
+    const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,3); if(a==="out")z=Math.max(z-.2,.5);
+    if(a==="reset"){z=1.25;tx=0;ty=0;} apply();
+  });
+  wrap.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();z=Math.min(3,Math.max(.5,z-e.deltaY*0.0016));apply();},{passive:false});
+  canvas.addEventListener("pointerdown",e=>{drag=true;canvas.classList.add("drag");sx=e.clientX-tx;sy=e.clientY-ty;canvas.setPointerCapture(e.pointerId)});
+  canvas.addEventListener("pointermove",e=>{if(!drag)return;tx=e.clientX-sx;ty=e.clientY-sy;apply()});
+  canvas.addEventListener("pointerup",()=>{drag=false;canvas.classList.remove("drag")});
+});
+</script>
+</body>
+</html>
