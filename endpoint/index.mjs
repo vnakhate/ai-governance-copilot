@@ -83,7 +83,7 @@ export function assess(profile, dataType, jurisdiction, highRiskUse = false) {
       missing_attributes: missingAttributes(null, tier),
     };
   }
-  const controls = profile.control_templates.map((c) => c.control);
+  const controls = (profile.control_templates || []).map((c) => c.control);
   const hasCert = (profile.certs || []).length > 0;
   const dpa = !!profile.dpa_on_file;
   // GDPR-style residency check is relative to the caller's jurisdiction.
@@ -123,11 +123,14 @@ export function assess(profile, dataType, jurisdiction, highRiskUse = false) {
            missing_attributes: missingAttributes(profile, tier) };
 }
 
-// --- profile -> Vanta record mapping (decision: capture matches verdict) -
+// --- record ids ----------------------------------------------------------
 let SEQ = 140;
+const nextRecordId = () => `VND-2026-${String(++SEQ).padStart(4, "0")}`;
+
+// --- profile -> Vanta record mapping (decision: capture matches verdict) -
 function toVantaRecord(profile, verdict) {
   return {
-    record_id: `VND-2026-${String(++SEQ).padStart(4, "0")}`,
+    record_id: nextRecordId(),
     object: "ai_vendor_risk",
     tool: profile.name,
     risk_level: verdict.risk_level,
@@ -136,6 +139,75 @@ function toVantaRecord(profile, verdict) {
     owner: "governance@company.com",
     status: verdict.risk_level === "LOW" ? "approved" : "flagged",
     captured_at: new Date().toISOString(),
+  };
+}
+
+// --- new-tool request intake (docs/intake-workflow.md) -------------------
+// A request is a DISTINCT object from a captured verdict: no confident answer yet,
+// just a pending item whose open_questions ARE the tier attributes the requester
+// hasn't provided (closing the loop with missingAttributes). Reuses assess() for
+// the provisional read.
+const PROFILE_FIELDS = ["source", "vendor", "data_residency", "certs", "dpa_on_file",
+  "training_excluded", "retention_days", "sub_processors", "encryption", "dpia_done",
+  "model_type", "training_data_source", "bias_assessment", "human_oversight",
+  "autonomy_level", "approval_status"];
+const QUESTION = {
+  source: "Vendor, internal, or open-source?",
+  data_residency: "Where is data stored / processed?",
+  dpa_on_file: "Is a signed DPA on file?",
+  certs: "SOC 2 Type II / ISO 27001 / ISO 42001?",
+  training_excluded: "Is our data excluded from model training?",
+  retention_days: "What is the data retention period?",
+  sub_processors: "Which sub-processors are in the chain?",
+  encryption: "Encryption in transit and at rest?",
+  dpia_done: "Has a DPIA / PIA been completed?",
+  model_type: "What model powers it (foundation / fine-tuned / agentic)?",
+  training_data_source: "Training data source and licensing?",
+  bias_assessment: "Has bias been assessed and is it monitored?",
+  human_oversight: "Is there human oversight on consequential output?",
+  autonomy_level: "Does it suggest only, or take actions?",
+  approval_status: "Current approval status?",
+};
+const CLASS_ORDER = { Public: 0, Internal: 1, Confidential: 2, "Regulated-PII": 3 };
+// the most-sensitive data class across the requested data types drives the tier
+function classifyMost(dataTypes) {
+  let best = "Public", bestType = (dataTypes && dataTypes[0]) || "";
+  for (const dt of dataTypes || []) {
+    const c = classify(dt);
+    if (CLASS_ORDER[c] > CLASS_ORDER[best]) { best = c; bestType = dt; }
+  }
+  return { dataClass: best, dataType: bestType };
+}
+const openQuestions = (missingKeys) => missingKeys.map((k) => QUESTION[k] || `Provide ${k}`);
+
+export function buildRequest(body = {}) {
+  const { tool, vendor, source, requested_by, department, intended_use,
+          data_types, jurisdiction, high_risk_use } = body;
+  // treat the request body as a partial profile — only the fields actually provided
+  const reqProfile = { name: tool || "the requested tool" };
+  for (const f of PROFILE_FIELDS) if (body[f] !== undefined) reqProfile[f] = body[f];
+  const { dataClass, dataType } = classifyMost(data_types);
+  const tier = riskTier(dataClass, high_risk_use);
+  const provisional = assess(reqProfile, dataType, jurisdiction, high_risk_use);
+  const missing = missingAttributes(reqProfile, tier); // name isn't a required attr
+  return {
+    record_id: nextRecordId(),
+    object: "ai_vendor_request",
+    status: "pending_review",
+    tool: tool || null,
+    vendor: vendor || null,
+    source: source || "vendor",
+    requested_by: requested_by || "anonymous",
+    department: department || null,
+    intended_use: intended_use || null,
+    data_types: data_types || [],
+    jurisdiction: jurisdiction || "EU",
+    data_class: dataClass,
+    tier,
+    provisional_verdict: `${provisional.risk_level} (provisional)`,
+    open_questions: openQuestions(missing),
+    owner: "governance@company.com",
+    requested_at: new Date().toISOString(),
   };
 }
 
@@ -214,7 +286,21 @@ const server = createServer(async (req, res) => {
     recordAudit({ who, tool_id, data_type, jurisdiction, verdict, proceeded: true });
     return json(res, 200, { captured: true, vanta_record: toVantaRecord(profile, verdict) });
   }
-  json(res, 404, { error: "not found", routes: ["GET /health", "GET /audit", "POST /assess", "POST /capture"] });
+
+  // /request — intake for a NEW/unknown tool. Captures a pending request whose
+  // open_questions are the tier attributes the requester didn't provide.
+  if (method === "POST" && url === "/request") {
+    const body = await readBody(req);
+    const record = buildRequest(body);
+    recordAudit({
+      who: body.requested_by || body.who, tool_id: body.tool,
+      data_type: record.data_types[0] || null, jurisdiction: record.jurisdiction,
+      verdict: { risk_level: record.provisional_verdict }, proceeded: "requested",
+    });
+    return json(res, 200, { requested: true, vanta_record: record });
+  }
+
+  json(res, 404, { error: "not found", routes: ["GET /health", "GET /audit", "POST /assess", "POST /capture", "POST /request"] });
 });
 
 // Only start the server when run directly (so tests can import assess() without a listen).
