@@ -35,3 +35,5 @@ coverage/
 # Local demo artifacts
 *.local
 .ngrok*
+audit-log.jsonl
+endpoint/audit-log.jsonl
