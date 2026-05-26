@@ -37,3 +37,6 @@ coverage/
 .ngrok*
 audit-log.jsonl
 endpoint/audit-log.jsonl
+
+# Playwright MCP scratch (snapshots/logs/console)
+.playwright-mcp/
