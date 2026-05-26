@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Tool Onboarding — Attribute Matrix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700&family=Fragment+Mono:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* Teal + slate · light-first, data-dense */
+:root{
+  --bg:#f6f8f9; --surface:#ffffff; --surface-2:#eef3f4; --recess:#e9eff0; --line:#dde6e8; --line-2:#c4d2d5;
+  --ink:#15272b; --ink-dim:#516268; --ink-faint:#8298a0;
+  --teal:#0e7490; --teal-soft:rgba(14,116,144,.1);
+  --slate:#0369a1; --slate-soft:rgba(3,105,161,.1);
+  --t1:#0e7490; --t1-bg:rgba(14,116,144,.12);
+  --t2:#b06d12; --t2-bg:rgba(176,109,18,.13);
+  --t3:#b23b54; --t3-bg:rgba(178,59,84,.13);
+  --now:#2f7d4f; --now-bg:rgba(47,125,79,.13);
+  --gap:#8298a0; --gap-bg:rgba(130,152,160,.12);
+  --sans:"Bricolage Grotesque",system-ui,sans-serif; --mono:"Fragment Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101719; --surface:#172022; --surface-2:#1d292c; --recess:#141d1f; --line:#27353a; --line-2:#34474d;
+    --ink:#e6eef0; --ink-dim:#a3b4ba; --ink-faint:#6f868d;
+    --teal:#3fb6d3; --teal-soft:rgba(63,182,211,.13);
+    --slate:#5aa6dd; --slate-soft:rgba(90,166,221,.13);
+    --t1:#3fb6d3; --t1-bg:rgba(63,182,211,.14);
+    --t2:#d6a24e; --t2-bg:rgba(214,162,78,.15);
+    --t3:#df7090; --t3-bg:rgba(223,112,144,.15);
+    --now:#7fc398; --now-bg:rgba(127,195,152,.15);
+    --gap:#6f868d; --gap-bg:rgba(111,134,141,.14);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1040px;margin:0 auto;padding:50px 22px 90px}
+@media(prefers-reduced-motion:no-preference){.rise{opacity:0;transform:translateY(12px);animation:rise .55s cubic-bezier(.2,.7,.3,1) forwards}@keyframes rise{to{opacity:1;transform:none}}}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal)}
+h1{font-size:clamp(30px,5vw,44px);line-height:1.04;margin:14px 0 8px;font-weight:700;letter-spacing:-.02em}
+.dek{font-size:18px;color:var(--ink-dim);max-width:64ch;margin:0}
+/* tier cards */
+.tiers{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));margin:30px 0 8px}
+.tier{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 16px;border-top:3px solid}
+.tier.a{border-top-color:var(--t1)} .tier.b{border-top-color:var(--t2)} .tier.c{border-top-color:var(--t3)}
+.tier h3{margin:0 0 3px;font-size:14px;font-family:var(--mono)}
+.tier.a h3{color:var(--t1)} .tier.b h3{color:var(--t2)} .tier.c h3{color:var(--t3)}
+.tier p{margin:0;font-size:13px;color:var(--ink-dim)}
+/* filters */
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:26px 0 12px}
+.bar .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-right:4px}
+.bar button{font-family:var(--mono);font-size:12px;padding:6px 13px;border-radius:20px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-dim);cursor:pointer}
+.bar button.on{background:var(--teal-soft);border-color:var(--teal);color:var(--teal);font-weight:600}
+.bar button:hover{border-color:var(--teal)}
+.count{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin-left:auto}
+/* table */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:11px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+thead th{position:sticky;top:0;background:var(--surface-2);text-align:left;font-family:var(--mono);font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-dim);padding:10px 14px;border-bottom:1px solid var(--line-2);z-index:2}
+td{padding:9px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:hover{background:var(--surface-2)}
+.cat-row td{background:var(--recess);font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--teal);font-weight:600;padding:8px 14px}
+.attr{font-weight:600;color:var(--ink)}
+.attr code{font-family:var(--mono);font-size:12px;background:var(--recess);border:1px solid var(--line);padding:1px 5px;border-radius:4px;font-weight:400;color:var(--ink)}
+.why{color:var(--ink-dim);font-size:12.5px}
+.b{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;padding:2px 8px;border-radius:5px;border:1px solid;white-space:nowrap}
+.b-t1{color:var(--t1);background:var(--t1-bg);border-color:var(--t1)}
+.b-t2{color:var(--t2);background:var(--t2-bg);border-color:var(--t2)}
+.b-t3{color:var(--t3);background:var(--t3-bg);border-color:var(--t3)}
+.b-now{color:var(--now);background:var(--now-bg);border-color:var(--now)}
+.b-gap{color:var(--gap);background:var(--gap-bg);border-color:var(--gap)}
+.scope{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+footer{margin-top:34px;font-family:var(--mono);font-size:11.5px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="rise">
+    <div class="kicker">AI tool onboarding · attribute matrix</div>
+    <h1>What an onboarding request can capture</h1>
+    <p class="dek">~55 attributes across 9 categories. Which are <em>required</em> depends on the risk tier (data class + use) and whether the tool is vendor or internal. <span class="b b-now" style="font-size:11px">now</span> = in the demo schema; <span class="b b-gap" style="font-size:11px">gap</span> = to add.</p>
+  </header>
+
+  <div class="tiers">
+    <div class="tier a rise"><h3>Tier 1 · baseline</h3><p>Every request. Identity, use, data class, residency, training-exclusion, DPA, certs, approval.</p></div>
+    <div class="tier b rise"><h3>Tier 2 · sensitive</h3><p>Data ≥ Confidential or risk ≥ limited. + sub-processors, encryption, access, DPIA, incident response.</p></div>
+    <div class="tier c rise"><h3>Tier 3 · high-risk</h3><p>Regulated-PII or high-risk use. + model provenance, training data, bias, explainability, oversight.</p></div>
+  </div>
+
+  <div class="bar">
+    <span class="lbl">Filter</span>
+    <button data-f="all" class="on">All</button>
+    <button data-f="t1">Tier 1</button>
+    <button data-f="t2">Tier 2</button>
+    <button data-f="t3">Tier 3</button>
+    <button data-f="gap">Gaps only</button>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="tbl-wrap rise">
+    <table id="tbl">
+      <thead><tr><th>Attribute</th><th>Why it matters</th><th>Tier</th><th>Scope</th><th>Schema</th></tr></thead>
+      <tbody>
+        <tr class="cat-row"><td colspan="5">1 · Identity &amp; ownership</td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">tool name</td><td class="why">what's being onboarded</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">vendor</td><td class="why">who's accountable</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">source</td><td class="why">vendor / internal / OSS — changes the whole checklist</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">version</td><td class="why">model/app version under review</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">requester · department</td><td class="why">who's asking, for whom</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">business owner</td><td class="why">accountable sponsor</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">owning team</td><td class="why">who maintains it</td><td><span class="b b-t1">T1</span></td><td class="scope">internal</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">2 · Use &amp; purpose</td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">intended_use</td><td class="why">justification; drives data class</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">user population &amp; scope</td><td class="why">blast radius</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">criticality</td><td class="why">harm if it fails</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">EU AI Act risk tier</td><td class="why">minimal / limited / high / prohibited — the master switch</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">high-risk use flags</td><td class="why">employment / credit / biometric / legal-medical</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">3 · Data</td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">data class</td><td class="why">Public / Internal / Confidential / Regulated-PII</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">data flow (in/out)</td><td class="why">what leaves, what returns</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">data_residency</td><td class="why">where it's processed/stored</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">cross-border transfer</td><td class="why">GDPR transfer basis</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="now"><td class="attr">retention_days</td><td class="why">how long they keep it</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">data minimization</td><td class="why">only what's needed</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">training exclusion</td><td class="why">does our data train their model? (the #1 question)</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">sub-processors</td><td class="why">4th parties in the chain</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">PII / PHI / PCI flags</td><td class="why">regulated data categories present</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">deletion / portability</td><td class="why">get our data back on exit</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">4 · Security &amp; certifications</td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">certs</td><td class="why">SOC 2 II · ISO 27001 · ISO 42001</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">dpa_on_file</td><td class="why">data processing agreement signed</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">DPIA / PIA</td><td class="why">privacy impact assessment done</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">encryption</td><td class="why">in transit + at rest</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">access controls</td><td class="why">SSO · SCIM · RBAC</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">incident response</td><td class="why">breach notification terms</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">pen-test / audit results</td><td class="why">independent security evidence</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">5 · Model / AI-specific</td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">model provider &amp; type</td><td class="why">foundation / fine-tuned / agentic</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">training data provenance</td><td class="why">source + licensing / copyright</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">bias assessment</td><td class="why">tested + monitored</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">explainability</td><td class="why">can decisions be explained</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">accuracy / hallucination risk</td><td class="why">eval results, error rates</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">autonomy level</td><td class="why">suggests vs takes actions (agentic)</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">human-in-the-loop</td><td class="why">oversight on consequential output</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">output guardrails</td><td class="why">filtering / safety controls</td><td><span class="b b-t3">T3</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">6 · Legal &amp; contractual</td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">IP ownership of outputs</td><td class="why">who owns what it produces</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">indemnification / liability</td><td class="why">who pays when it goes wrong</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">ToS + renewal dates</td><td class="why">contract terms, lock-in clock</td><td><span class="b b-t1">T1</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">pricing / cost</td><td class="why">budget + spend visibility</td><td><span class="b b-t1">T1</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">SLA</td><td class="why">uptime / support guarantees</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">exit &amp; data portability</td><td class="why">offboarding path</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">7 · Vendor viability</td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">company / financial stability</td><td class="why">will they exist next year</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t3" data-s="gap"><td class="attr">references</td><td class="why">peer deployments</td><td><span class="b b-t3">T3</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">support model</td><td class="why">who you call when it breaks</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">lock-in risk</td><td class="why">switching cost</td><td><span class="b b-t2">T2</span></td><td class="scope">vendor</td><td><span class="b b-gap">gap</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">8 · Governance &amp; lifecycle</td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">approval_status</td><td class="why">unreviewed / approved / rejected</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">approver</td><td class="why">who signed off</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">review / re-review date</td><td class="why">recertification cadence</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">required controls</td><td class="why"><code>control_templates</code></td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">risk verdict</td><td class="why">the engine's output</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="now"><td class="attr">audit logging</td><td class="why">every decision recorded</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+
+        <tr class="cat-row"><td colspan="5">9 · Operational</td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">integration method</td><td class="why">SSO / API / MCP / browser ext</td><td><span class="b b-t1">T1</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="now"><td class="attr">capabilities</td><td class="why">what the tool does</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-now">now</span></td></tr>
+        <tr data-t="t1" data-s="gap"><td class="attr">deployment env</td><td class="why">where it runs</td><td><span class="b b-t1">T1</span></td><td class="scope">internal</td><td><span class="b b-gap">gap</span></td></tr>
+        <tr data-t="t2" data-s="gap"><td class="attr">usage telemetry</td><td class="why">who's actually using it</td><td><span class="b b-t2">T2</span></td><td class="scope">all</td><td><span class="b b-gap">gap</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>Generated by /visual-explainer · companion to docs/intake-workflow.md · Teal/slate · Bricolage Grotesque + Fragment Mono</footer>
+</div>
+
+<script>
+const rows = [...document.querySelectorAll("#tbl tbody tr[data-t]")];
+const cats = [...document.querySelectorAll("#tbl tbody tr.cat-row")];
+const countEl = document.getElementById("count");
+function applyFilter(f){
+  rows.forEach(r=>{
+    const show = f==="all" || (f==="gap" ? r.dataset.s==="gap" : r.dataset.t===f);
+    r.style.display = show ? "" : "none";
+  });
+  // hide a category header if all its rows are hidden
+  cats.forEach(c=>{
+    let n=c.nextElementSibling, any=false;
+    while(n && !n.classList.contains("cat-row")){ if(n.style.display!=="none") any=true; n=n.nextElementSibling; }
+    c.style.display = any ? "" : "none";
+  });
+  countEl.textContent = rows.filter(r=>r.style.display!=="none").length + " of " + rows.length + " attributes";
+}
+document.querySelectorAll(".bar button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll(".bar button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on"); applyFilter(b.dataset.f);
+});
+applyFilter("all");
+</script>
+</body>
+</html>

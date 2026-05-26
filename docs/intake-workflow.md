@@ -104,6 +104,51 @@ own object and lifecycle, so it gets its own action.
 | Glean agent + custom-action pattern | `requestNewTool` action + intake conversation in agent instructions |
 | `data_type` classification | request state field (`pending_review` …) |
 
+## Canonical onboarding attribute catalog
+
+What an onboarding request *could* capture. Two things decide which are actually required:
+the **risk tier** (driven by data class + use) and **vendor vs internal**. The demo
+`profiles.json` captures a small subset (`[now]`); the rest are `[gap]` to add as the
+program matures. Grounded in vendor-risk + AI-TRiSM practice (SOC 2 / DPA), the EU AI Act
+risk tiers, ISO/IEC 42001, and NIST AI RMF.
+
+### Tier model (what's required, when)
+
+| Tier | Triggered when | Adds (cumulative) |
+|---|---|---|
+| **Tier 1 — baseline** | every request | identity, intended use, data classification, residency, training-exclusion, DPA, primary certs, approval status |
+| **Tier 2 — sensitive** | data class ≥ Confidential, or EU AI Act risk ≥ limited | sub-processors, encryption, access controls, retention, DPIA, incident response |
+| **Tier 3 — high-risk** | Regulated-PII, or a high-risk use (employment / credit / biometric / legal-medical) | model provenance, training-data source, bias assessment, explainability, human oversight, autonomy level, output guardrails, conformity assessment |
+
+The rubric demands attributes by tier: a Tier-3 assessment with Tier-3 fields missing
+returns them as `missing_attributes` / `open_questions`, not a false "looks fine."
+
+### Attributes by category
+
+Legend: `[now]` in demo schema · `[gap]` to add · (V) vendor-only · (I) internal-only
+
+**1. Identity & ownership** — `tool name` `[now]`, `vendor` `[now]`, `source` (vendor/internal/OSS) `[gap]`, `version` `[gap]`, `requester` / `department` / `business owner` `[gap]`, `owning team` (I) `[gap]`
+
+**2. Use & purpose** — `intended_use` `[gap]`, `user population & scope` `[gap]`, `criticality` `[gap]`, `EU AI Act risk tier` `[gap]`, `high-risk use flags` (employment/credit/biometric/legal-medical) `[gap]`
+
+**3. Data** — `data_types` → classification `[now]`, `data flow (in/out)` `[gap]`, `data_residency` `[now]`, `cross-border transfer` `[gap]`, `retention_days` `[now]`, `data minimization` `[gap]`, **`training exclusion`** `[gap]`, `sub-processors` `[gap]`, `PII/PHI/PCI flags` `[gap]`, `deletion / portability` `[gap]`
+
+**4. Security & certifications** — `certs` (SOC 2 II, ISO 27001, ISO 42001) `[now]`, `dpa_on_file` `[now]`, `DPIA / PIA` `[gap]`, `encryption (transit/rest)` `[gap]`, `access controls (SSO/SCIM/RBAC)` `[gap]`, `incident response & breach notice` `[gap]`, `pen-test / audit results` `[gap]`
+
+**5. Model / AI-specific** — `model provider & type` `[gap]`, `training data provenance + licensing` `[gap]`, `bias assessment + monitoring` `[gap]`, `explainability` `[gap]`, `accuracy / hallucination risk` `[gap]`, **`autonomy level`** (suggests vs acts) `[gap]`, `human-in-the-loop` `[gap]`, `output guardrails` `[gap]`
+
+**6. Legal & contractual** (V) — `IP ownership of outputs` `[gap]`, `indemnification / liability` `[gap]`, `ToS + renewal dates` `[gap]`, `pricing / cost` `[gap]`, `SLA` `[gap]`, `exit & data portability` `[gap]`
+
+**7. Vendor viability** (V) — `company size / financial stability` `[gap]`, `references` `[gap]`, `support model` `[gap]`, `lock-in risk` `[gap]`
+
+**8. Governance & lifecycle** — `approval_status` `[now]`, `approver` `[gap]`, `review / re-review date` `[gap]`, `required controls` → `control_templates` `[now]`, `risk verdict` `[now]`, `audit logging of usage` `[now]`
+
+**9. Operational** — `integration method` (SSO/API/MCP/extension) `[gap]`, `capabilities` `[now]`, `deployment env` (I) `[gap]`, `usage telemetry` `[gap]`
+
+> The engine wires a representative subset of these per tier (see `endpoint/index.mjs`
+> → `requiredAttributes()`); the full catalog above is the program's reference, and the
+> visual matrix is `docs/onboarding-attributes.html`.
+
 ## Open questions for the build
 
 - Routing target on submit: Vanta pending record only, or also open a ticket (Jira/ServiceNow)?

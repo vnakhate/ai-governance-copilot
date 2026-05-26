@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { assess, PROFILES, recordAudit } from "./index.mjs";
+import { assess, PROFILES, recordAudit, riskTier, requiredAttributes } from "./index.mjs";
 
 const acme = PROFILES["acme-notetaker"];
 const noteflow = PROFILES["noteflow-eu"];
@@ -79,4 +79,37 @@ test("audit: a write failure is swallowed (F1) and a missing verdict is null (F2
   } finally {
     delete process.env.AUDIT_LOG;
   }
+});
+
+test("tier: rises with data sensitivity and high-risk use", () => {
+  assert.equal(riskTier("Regulated-PII"), 3);
+  assert.equal(riskTier("Confidential"), 2);
+  assert.equal(riskTier("Internal"), 1);
+  assert.equal(riskTier("Public"), 1);
+  assert.equal(riskTier("Internal", true), 3); // high-risk use bumps to tier 3
+});
+
+test("tier: requiredAttributes is cumulative", () => {
+  assert.ok(requiredAttributes(1).includes("dpa_on_file"));
+  assert.ok(requiredAttributes(3).includes("dpa_on_file"));      // tier 1 keys carried up
+  assert.ok(requiredAttributes(3).includes("bias_assessment"));  // plus tier 3
+  assert.ok(!requiredAttributes(1).includes("bias_assessment")); // not at tier 1
+});
+
+test("missing_attributes: sparse tool surfaces gaps, complete tool surfaces none", () => {
+  const acme = assess(PROFILES["acme-notetaker"], "call_audio", "EU");
+  assert.equal(acme.tier, 3);
+  assert.ok(acme.missing_attributes.includes("model_type"));   // tier-3 field absent
+  assert.ok(acme.missing_attributes.includes("sub_processors")); // tier-2 field absent
+  assert.ok(acme.missing_attributes.includes("retention_days")); // null counts as missing
+
+  const claude = assess(PROFILES["claude-bedrock-internal"], "customer_pii", "EU");
+  assert.equal(claude.tier, 3);
+  assert.deepEqual(claude.missing_attributes, []); // fully populated -> nothing missing
+});
+
+test("missing_attributes: unknown tool needs the full tier list", () => {
+  const v = assess(null, "customer_pii", "EU");
+  assert.equal(v.tier, 3);
+  assert.deepEqual(v.missing_attributes, requiredAttributes(3));
 });
