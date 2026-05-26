@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Governance Copilot — Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f5f0; --surface:#ffffff; --surface-2:#f0ece3; --line:#e4ddcf; --line-2:#d2c6b2;
+  --ink:#1c2433; --ink-dim:#56607a; --ink-faint:#8a91a4;
+  --navy:#1e3a5f; --navy-soft:rgba(30,58,95,.07); --gold:#b0852f; --gold-soft:rgba(176,133,47,.12);
+  --sans:"IBM Plex Sans",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#101521; --surface:#172033; --surface-2:#1d273c; --line:#2a3550; --line-2:#3a486a;
+    --ink:#e8ecf5; --ink-dim:#a7b0c6; --ink-faint:#727d96;
+    --navy:#7fa9d6; --navy-soft:rgba(127,169,214,.1); --gold:#d6ab5e; --gold-soft:rgba(214,171,94,.13);
+  }
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 12% 0%, var(--navy-soft), transparent 40%),radial-gradient(circle at 90% 4%, var(--gold-soft), transparent 36%);background-attachment:fixed}
+.wrap{max-width:980px;margin:0 auto;padding:60px 24px 90px}
+@media(prefers-reduced-motion:no-preference){.rise{opacity:0;transform:translateY(13px);animation:rise .6s cubic-bezier(.2,.7,.3,1) forwards}.rise:nth-child(2){animation-delay:.04s}.rise:nth-child(3){animation-delay:.08s}@keyframes rise{to{opacity:1;transform:none}}}
+.kicker{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
+h1{font-size:clamp(32px,5.5vw,50px);line-height:1.04;margin:14px 0 10px;font-weight:700;letter-spacing:-.02em}
+.dek{font-size:19px;color:var(--ink-dim);max-width:64ch;margin:0}
+.repo{font-family:var(--mono);font-size:13px;margin-top:16px}
+.repo a{color:var(--navy)}
+.lab{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin:44px 0 16px;display:flex;align-items:center;gap:10px}
+.lab::after{content:"";flex:1;height:1px;background:var(--line)}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+a.card{display:block;text-decoration:none;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;transition:border-color .15s,transform .15s}
+a.card:hover{border-color:var(--navy);transform:translateY(-2px)}
+a.card .t{font-size:11px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin-bottom:8px}
+a.card h3{margin:0 0 5px;font-size:18px;font-weight:600}
+a.card p{margin:0;font-size:14px;color:var(--ink-dim)}
+.specs{display:flex;flex-wrap:wrap;gap:9px}
+.specs a{font-family:var(--mono);font-size:13px;text-decoration:none;color:var(--ink-dim);background:var(--surface);border:1px solid var(--line);padding:8px 14px;border-radius:8px}
+.specs a:hover{border-color:var(--navy);color:var(--navy)}
+footer{margin-top:50px;padding-top:20px;border-top:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--ink-faint)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="rise">
+    <div class="kicker">AI Governance Copilot · docs</div>
+    <h1>Governance at the decision moment</h1>
+    <p class="dek">A deterministic risk-verdict engine with a Glean chat copilot: an employee asks, the engine answers from policy, the decision is captured in Vanta. These pages explain how it works.</p>
+    <div class="repo">repo · <a href="https://github.com/vnakhate/ai-governance-copilot">vnakhate/ai-governance-copilot</a></div>
+  </header>
+
+  <div class="lab">Visual explainers</div>
+  <div class="grid">
+    <a class="card rise" href="architecture.html"><div class="t">architecture</div><h3>Architecture &amp; design</h3><p>Components, data flow, the deterministic rubric, request sequence, schemas, repo map.</p></a>
+    <a class="card rise" href="system-overview.html"><div class="t">overview</div><h3>System overview</h3><p>The ask → verdict → capture loop, the locked decisions, and build status.</p></a>
+    <a class="card rise" href="onboarding-attributes.html"><div class="t">reference</div><h3>Attribute matrix</h3><p>The ~55 onboarding attributes, by tier and vendor/internal scope. Filterable.</p></a>
+    <a class="card rise" href="new-tool-workflow.html"><div class="t">workflow</div><h3>New-tool request (runtime)</h3><p>The intake flow, the missing-attributes → open-questions loop, a live response.</p></a>
+    <a class="card rise" href="new-tool-sequence.html"><div class="t">sequence</div><h3>Request sequence</h3><p>The intake request as a full-page, fit-to-view sequence diagram.</p></a>
+    <a class="card rise" href="intake-workflow.html"><div class="t">workflow</div><h3>Intake workflow (design)</h3><p>Entry points, conversation, lifecycle state machine, the request record.</p></a>
+    <a class="card rise" href="journey.html"><div class="t">recap</div><h3>Build journey</h3><p>How this went from a one-line idea to a merged product through the gstack pipeline.</p></a>
+  </div>
+
+  <div class="lab">Specs (Markdown)</div>
+  <div class="specs">
+    <a href="https://github.com/vnakhate/ai-governance-copilot/blob/main/docs/design.md">design.md</a>
+    <a href="https://github.com/vnakhate/ai-governance-copilot/blob/main/docs/intake-workflow.md">intake-workflow.md</a>
+    <a href="https://github.com/vnakhate/ai-governance-copilot/blob/main/docs/test-plan.md">test-plan.md</a>
+    <a href="https://github.com/vnakhate/ai-governance-copilot/blob/main/docs/roadmap.md">roadmap.md</a>
+  </div>
+
+  <footer>AI Governance Copilot · served via GitHub Pages from /docs on main</footer>
+</div>
+</body>
+</html>
