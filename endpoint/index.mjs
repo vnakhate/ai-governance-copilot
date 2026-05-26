@@ -10,7 +10,7 @@
 // Run: node index.mjs   (PORT env optional, default 8787)
 
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
+import { readFileSync, appendFileSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -104,6 +104,31 @@ function toVantaRecord(profile, verdict) {
   };
 }
 
+// --- audit trail (CEO finding F1: the moat) ------------------------------
+// Every /assess is recorded, not just the decisions someone captures. Demo scope is
+// an append-only JSONL event log; a tamper-evident store (RBAC, retention) is roadmap.
+// Path is read lazily so tests can redirect it via AUDIT_LOG without re-importing.
+const auditPath = () => process.env.AUDIT_LOG || join(__dir, "audit-log.jsonl");
+export function recordAudit({ who, tool_id, data_type, jurisdiction, verdict, proceeded }) {
+  const entry = {
+    ts: new Date().toISOString(),
+    who: who || "anonymous",
+    tool: tool_id ?? null,
+    data: data_type ?? null,
+    jurisdiction: jurisdiction ?? null,
+    verdict: verdict.risk_level,
+    proceeded: proceeded ?? null, // null = assessed only; true = went on to capture
+  };
+  appendFileSync(auditPath(), JSON.stringify(entry) + "\n");
+  return entry;
+}
+function readAudit(limit = 50) {
+  try {
+    return readFileSync(auditPath(), "utf8").trim().split("\n").filter(Boolean)
+      .slice(-limit).map((l) => JSON.parse(l));
+  } catch { return []; }
+}
+
 // --- HTTP plumbing -------------------------------------------------------
 function readBody(req) {
   return new Promise((resolve) => {
@@ -119,19 +144,25 @@ const json = (res, code, obj) => {
 const server = createServer(async (req, res) => {
   const { method, url } = req;
   if (method === "GET" && url === "/health") return json(res, 200, { ok: true, tools: Object.keys(PROFILES) });
+  // The audit trail — the complete record of every AI-use decision (demo beat).
+  if (method === "GET" && url === "/audit") return json(res, 200, { entries: readAudit() });
 
   if (method === "POST" && (url === "/assess" || url === "/capture")) {
-    const { tool_id, data_type, jurisdiction } = await readBody(req);
+    const { tool_id, data_type, jurisdiction, who } = await readBody(req);
     const profile = PROFILES[tool_id] || null;
     const verdict = assess(profile, data_type, jurisdiction); // 5A: same fn both endpoints
 
-    if (url === "/assess") return json(res, 200, { tool_id, data_type, jurisdiction, ...verdict });
+    if (url === "/assess") {
+      recordAudit({ who, tool_id, data_type, jurisdiction, verdict, proceeded: null });
+      return json(res, 200, { tool_id, data_type, jurisdiction, ...verdict });
+    }
 
     // /capture is the gated write. The agent only calls this after a user "Yes".
     if (!profile) return json(res, 422, { error: "Cannot capture an unknown tool. Assess a known tool first." });
+    recordAudit({ who, tool_id, data_type, jurisdiction, verdict, proceeded: true });
     return json(res, 200, { captured: true, vanta_record: toVantaRecord(profile, verdict) });
   }
-  json(res, 404, { error: "not found", routes: ["GET /health", "POST /assess", "POST /capture"] });
+  json(res, 404, { error: "not found", routes: ["GET /health", "GET /audit", "POST /assess", "POST /capture"] });
 });
 
 // Only start the server when run directly (so tests can import assess() without a listen).
