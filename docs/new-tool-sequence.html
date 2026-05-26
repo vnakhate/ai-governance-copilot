@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>New-Tool Request — Sequence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0e0c; --surface:#121712; --surface-2:#171d16; --recess:#0a0d09; --line:rgba(110,231,160,.15); --line-2:rgba(110,231,160,.28);
+  --text:#cdd9cc; --dim:#7c8c79; --faint:#52614f;
+  --green:#6ee7a0; --green-soft:rgba(110,231,160,.12); --amber:#e3b34e; --red:#e8736a;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#f3f5ef; --surface:#ffffff; --surface-2:#eaefe6; --recess:#e6ebe1; --line:rgba(30,70,40,.14); --line-2:rgba(30,70,40,.26);
+    --text:#1c2a1e; --dim:#4f6150; --faint:#7d8c7c;
+    --green:#1f7a4d; --green-soft:rgba(31,122,77,.1); --amber:#9a6b14; --red:#b23b32;
+  }
+}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;
+  background-image:radial-gradient(circle at 0% 0%, var(--green-soft), transparent 32%);background-attachment:fixed}
+.wrap{max-width:1180px;margin:0 auto;padding:42px 22px 70px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.prompt{color:var(--green);font-size:12px;letter-spacing:.04em}.prompt::before{content:"$ "}
+h1{font-weight:700;font-size:clamp(24px,4vw,34px);margin:10px 0 6px;letter-spacing:-.01em;text-shadow:0 0 18px var(--green-soft)}
+.dek{font-size:14px;color:var(--dim);max-width:74ch;margin:0}
+.back{font-size:12.5px;color:var(--green);text-decoration:none;border:1px solid var(--line-2);padding:7px 13px;border-radius:6px;white-space:nowrap}
+.back:hover{background:var(--green-soft)}
+/* diagram — fills width, large */
+.mermaid-wrap{position:relative;background:var(--recess);border:1px solid var(--line);border-radius:10px;padding:14px;overflow:hidden;height:84vh;display:flex;align-items:center;justify-content:center}
+.mermaid-canvas{cursor:grab;transition:transform .08s linear;transform-origin:center center}
+.mermaid-canvas.drag{cursor:grabbing}
+.mermaid svg{display:block;max-width:none!important}
+.zoom{position:absolute;top:12px;right:12px;display:flex;gap:6px;z-index:5}
+.zoom button{font-family:var(--mono);width:34px;height:34px;border:1px solid var(--line-2);background:var(--surface);color:var(--text);border-radius:6px;cursor:pointer;font-size:16px;line-height:1}
+.zoom button:hover{border-color:var(--green);color:var(--green)}
+.hint{font-size:11.5px;color:var(--faint);text-align:center;margin-top:9px}
+/* step legend */
+.steps{margin-top:30px;display:grid;gap:9px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.steps li{list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:11px 14px 11px 44px;position:relative;font-size:13.5px;color:var(--dim);counter-increment:s}
+.steps{counter-reset:s;padding:0}
+.steps li::before{content:counter(s);position:absolute;left:12px;top:11px;width:22px;height:22px;font-size:11px;font-weight:700;color:var(--bg);background:var(--green);border-radius:50%;display:flex;align-items:center;justify-content:center}
+.steps li b{color:var(--text);font-weight:600}
+footer{margin-top:34px;padding-top:16px;border-top:1px solid var(--line);font-size:11.5px;color:var(--faint)}
+footer a{color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="prompt">governance-copilot · request intake</div>
+      <h1>New-tool request — sequence</h1>
+      <p class="dek">Ask &rarr; intake &rarr; pending request. The agent runs a provisional assessment, writes an <code>ai_vendor_request</code> (pending_review), logs a <code>requested</code> audit event, and hands back the open questions. Governance adjudicates later in Vanta.</p>
+    </div>
+    <a class="back" href="new-tool-workflow.html">&larr; back to workflow</a>
+  </div>
+
+  <div class="mermaid-wrap" id="w1">
+    <div class="zoom"><button data-z="out">&minus;</button><button data-z="reset">&#8635;</button><button data-z="in">+</button></div>
+    <div class="mermaid-canvas">
+<pre class="mermaid">
+sequenceDiagram
+  actor E as Employee
+  participant G as Glean agent
+  participant EP as /request endpoint
+  participant V as Vanta
+  E->>G: I want to onboard Otter.ai for call notes
+  G->>E: which tool, data types, department, jurisdiction?
+  E->>G: answers
+  G->>G: confirm summary, user says Yes
+  G->>EP: POST /request {tool, data_types, jurisdiction}
+  Note over EP: classify -> tier -> provisional assess,<br/>then missingAttributes -> open_questions
+  EP->>V: write ai_vendor_request (pending_review)
+  EP->>EP: audit event proceeded=requested
+  EP-->>G: record_id, tier 3, 15 open_questions
+  G-->>E: Logged PENDING + checklist of what review still needs
+</pre>
+    </div>
+  </div>
+  <div class="hint">Full sequence, fit to view · Ctrl/&#8984; + scroll to zoom in · drag to pan · &#8635; refits</div>
+
+  <ol class="steps">
+    <li><b>Intent</b> — employee asks to onboard a tool not in the registry.</li>
+    <li><b>Collect</b> — agent gathers only the missing fields (tool, data types, dept, jurisdiction).</li>
+    <li><b>Confirm</b> — agent summarizes; the user says "Yes".</li>
+    <li><b>POST /request</b> — classify data → risk tier → provisional <code>assess()</code> → <code>missingAttributes</code> → <code>open_questions</code>.</li>
+    <li><b>Write + audit</b> — a pending <code>ai_vendor_request</code> in Vanta, plus a <code>requested</code> audit event.</li>
+    <li><b>Hand back</b> — record id, provisional verdict, and the checklist of what review must resolve.</li>
+  </ol>
+
+  <footer>Generated by /visual-explainer · standalone sequence for docs/intake-workflow.md · <a href="new-tool-workflow.html">full workflow page</a></footer>
+</div>
+
+<script type="module">
+import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+mermaid.initialize({
+  startOnLoad:false, securityLevel:"loose", theme:"base",
+  themeVariables:{
+    fontFamily:'"JetBrains Mono", monospace', fontSize:"18px",
+    primaryColor: dark?"#171d16":"#ffffff",
+    primaryTextColor: dark?"#cdd9cc":"#1c2a1e",
+    primaryBorderColor:"#6ee7a0",
+    lineColor: dark?"#7c8c79":"#4f6150",
+    actorBkg: dark?"#171d16":"#ffffff", actorBorder:"#6ee7a0", actorTextColor: dark?"#cdd9cc":"#1c2a1e",
+    signalColor: dark?"#9fb09c":"#4f6150", signalTextColor: dark?"#9fb09c":"#4f6150",
+    noteBkgColor: dark?"#1d2a1d":"#eaefe6", noteTextColor: dark?"#cdd9cc":"#1c2a1e", noteBorderColor:"#e3b34e"
+  },
+  // natural size so we can measure it and scale-to-fit the viewport on load
+  sequence:{ useMaxWidth:false, mirrorActors:false, actorMargin:70, boxMargin:14,
+             actorFontSize:19, messageFontSize:16, noteFontSize:15, height:50, bottomMarginAdj:6 }
+});
+await mermaid.run();
+const wrap=document.getElementById("w1"), canvas=wrap.querySelector(".mermaid-canvas");
+const svg=canvas.querySelector("svg");
+let FIT=1, z=1, tx=0, ty=0, drag=false, sx=0, sy=0;
+const apply=()=>canvas.style.transform=`translate(${tx}px,${ty}px) scale(${z})`;
+// scale the whole diagram to fit the box, centered — "zoomed out" by default
+function fitToView(){
+  if(!svg) return;
+  canvas.style.transform="none";
+  const r=svg.getBoundingClientRect();
+  const fw=(wrap.clientWidth-30)/r.width, fh=(wrap.clientHeight-30)/r.height;
+  FIT=Math.min(fw, fh, 1.8);  // fit width AND height; cap so a small diagram doesn't balloon
+  z=FIT; tx=0; ty=0; apply();
+}
+fitToView();
+addEventListener("resize", fitToView);
+wrap.querySelectorAll(".zoom button").forEach(b=>b.onclick=()=>{
+  const a=b.dataset.z; if(a==="in")z=Math.min(z+.2,4); if(a==="out")z=Math.max(z-.2,.25);
+  if(a==="reset"){z=FIT;tx=0;ty=0;} apply();
+});
+wrap.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();z=Math.min(4,Math.max(.25,z-e.deltaY*0.0016));apply();},{passive:false});
+canvas.addEventListener("pointerdown",e=>{drag=true;canvas.classList.add("drag");sx=e.clientX-tx;sy=e.clientY-ty;canvas.setPointerCapture(e.pointerId)});
+canvas.addEventListener("pointermove",e=>{if(!drag)return;tx=e.clientX-sx;ty=e.clientY-sy;apply()});
+canvas.addEventListener("pointerup",()=>{drag=false;canvas.classList.remove("drag")});
+</script>
+</body>
+</html>
